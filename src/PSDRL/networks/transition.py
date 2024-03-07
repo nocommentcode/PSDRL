@@ -22,10 +22,13 @@ class Network(nn.Module):
             nn.Linear(self.latent_dim, embed_dim + 1),
         )
         self._cell = REC_CELL(embed_dim + n_actions, self.gru_dim)
-        self.loss_function = TM_LOSS_F
+
         self.optimizer = TM_OPTIM(self.parameters(), lr=config["learning_rate"])
         self.to(device)
         self.loss = 0
+
+    def get_loss_fn(self):
+        return TM_LOSS_F
 
     def forward(self, x: torch.tensor, hidden: torch.tensor):
         h = self._cell(x, hidden)
