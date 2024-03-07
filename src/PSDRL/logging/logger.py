@@ -1,7 +1,8 @@
 from typing import Union, TYPE_CHECKING
+from ..common.utils import generate_rollout_img
 
 if TYPE_CHECKING:
-    from ..common.data_manager import DataManager
+    from .data_manager import DataManager
 
 
 class Logger:
@@ -22,6 +23,13 @@ class Logger:
             [train_reward, test_reward],
         )
         self.data_manager.update(self.log, timestep)
+
+    def log_rollout(self, rollouts, timestep: int):
+        images = [
+            generate_rollout_img(states, rewards, dones)
+            for states, rewards, dones in rollouts
+        ]
+        self.data_manager.log_images("Rollouts", images, timestep)
 
     def add_replay_statistics(self, episodes: list):
         n_episodes = len(episodes)

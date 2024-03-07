@@ -8,9 +8,10 @@ from ..common.utils import (
     extract_episode_data,
 )
 from ..common.settings import BATCH_EMBEDDING_SIZE, BLR_COEFFICIENT, ONE_OVER_LAMBDA
+import torch.nn as nn
 
 
-class NeuralLinearModel:
+class NeuralLinearModel(nn.Module):
     def __init__(
         self,
         config: dict,
@@ -21,6 +22,7 @@ class NeuralLinearModel:
         autoencoder: torch.nn.Module,
         device: str,
     ):
+        super().__init__()
         self.device = device
         self.transition_network = transition_network
         self.terminal_network = terminal_network

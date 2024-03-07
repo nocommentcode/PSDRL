@@ -1,23 +1,20 @@
+import gym
 import torch
 import numpy as np
 
-from ..common.logger import Logger
+from ..logging.logger import Logger
 from ..common.replay import Dataset
 from ..common.utils import preprocess_image
-from ..networks.representation import AutoEncoder
-from ..networks.terminal import Network as TerminalNetwork
-from ..networks.transition import Network as TransitionNetwork
 from ..networks.value import Network as ValueNetwork
-from ..bayes.neural_linear_model import NeuralLinearModel
-from ..training.transition import TransitionModelTrainer
 from ..training.policy import PolicyTrainer
-from ..training.representation import RepresentationTrainer
 from ..common.settings import TP_THRESHOLD
+from ..agent.neural_linear_agent_model import NeuralLinearAgentModel
+import torch.nn as nn
 
 
-class PSDRL:
+class PSDRL(nn.Module):
     def __init__(self, config: dict, actions: list, logger: Logger, seed: int = None):
-
+        super().__init__()
         self.device = "cpu" if not config["gpu"] else "cuda:0"
         self.random_state = np.random.RandomState(seed)
 
@@ -38,16 +35,6 @@ class PSDRL:
             seed,
         )
 
-        self.autoencoder = AutoEncoder(config["representation"], self.device)
-        terminal_network = TerminalNetwork(
-            config["representation"]["embed_dim"], config["terminal"], self.device
-        )
-        transition_network = TransitionNetwork(
-            config["representation"]["embed_dim"],
-            self.num_actions,
-            config["transition"],
-            self.device,
-        )
         self.value_network = ValueNetwork(
             config["representation"]["embed_dim"],
             config["value"],
@@ -55,28 +42,6 @@ class PSDRL:
             config["transition"]["gru_dim"],
         )
 
-        self.model = NeuralLinearModel(
-            config["algorithm"],
-            config["representation"]["embed_dim"],
-            actions,
-            transition_network,
-            terminal_network,
-            self.autoencoder,
-            self.device,
-        )
-
-        self.representation_trainer = RepresentationTrainer(
-            config["representation"]["training_iterations"], self.autoencoder
-        )
-        self.transition_trainer = TransitionModelTrainer(
-            config["transition"],
-            transition_network,
-            self.autoencoder,
-            terminal_network,
-            config["replay"]["batch_size"],
-            self.num_actions,
-            self.device,
-        )
         self.policy_trainer = PolicyTrainer(
             config["value"],
             config["transition"]["gru_dim"],
@@ -86,21 +51,26 @@ class PSDRL:
             self.actions,
         )
 
+        if config["algorithm"]["bayesian"] == "neural-linear":
+            self.model = NeuralLinearAgentModel(config, self.device, self.actions)
+        else:
+            raise ValueError(f"agent {config['algorithm']['bayesian']} not supported")
+
     def select_action(self, obs: np.array, step: int):
         """
         Reset the hidden state at the start of a new episode. Return a random action with a probability of epsilon,
         otherwise follow the current policy and sampled model greedily.
         """
         if step == 0:
-            self.model.prev_state[:] = torch.zeros(
-                self.model.transition_network.gru_dim
-            )
+            self.model.reset_hidden_state()
 
         if self.random_state.random() < self.epsilon:
             return self.random_state.choice(self.num_actions)
+
         obs = preprocess_image(obs)
         obs = torch.from_numpy(obs).float().to(self.device)
-        obs = self.model.autoencoder.embed(obs)
+        obs = self.model.embed_observation(obs)
+
         return self._select_action(obs)
 
     def _select_action(self, obs: torch.tensor):
@@ -116,7 +86,9 @@ class PSDRL:
         values = (rewards + v).detach().cpu().numpy()
 
         action = self.random_state.choice(np.where(np.isclose(values, max(values)))[0])
-        self.model.prev_state = h[action]
+
+        self.model.set_hidden_state(h[action])
+
         return self.actions[action]
 
     def update(
@@ -143,8 +115,52 @@ class PSDRL:
             self.update_freq if timestep > self.warmup_length else self.warmup_freq
         )
         if ep and timestep % update_freq == 0:
-            self.representation_trainer.train_(self.dataset)
-            self.transition_trainer.train_(self.dataset)
-            self.model.update_posteriors(self.dataset)
-            self.model.sample()
+            self.model.train(self.dataset)
             self.policy_trainer.train_(self.model, self.dataset)
+
+    @torch.no_grad
+    def rollout_predictions(self, env: gym.Env, num_steps: int = 15):
+
+        def embed_obs(obs):
+            obs = preprocess_image(obs)
+            obs = torch.from_numpy(obs).float().to(self.device)
+            return self.model.embed_observation(obs)
+
+        obs, _ = env.reset()
+        done = False
+
+        pred_states = [obs]
+        actual_states = [obs]
+
+        pred_reward = [0]
+        acutal_reward = [0]
+
+        pred_terminal = [0]
+        acutal_terminal = [0]
+
+        s = embed_obs(obs)
+        for i in range(num_steps):
+            s_, r, t, _ = self.model.predict(s, self.model.prev_state)
+            a = self.select_action(obs, i)
+
+            s = s_[a].unsqueeze(0)
+            r = r[a]
+            t = t[a]
+
+            pred_reward.append(r.item())
+            pred_terminal.append(t.item())
+            pred_states.append(self.model.decode_observation(s).detach().cpu().numpy())
+
+            obs, reward, done, _, _ = env.step(a)
+            actual_states.append(obs)
+            acutal_reward.append(reward)
+            acutal_terminal.append(1 if done else 0)
+
+            if done:
+                break
+
+        return (
+            (pred_states, actual_states),
+            (pred_reward, acutal_reward),
+            (pred_terminal, acutal_terminal),
+        )

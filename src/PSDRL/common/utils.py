@@ -8,8 +8,9 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 from skimage import color
-
 from .settings import STATE_SIZE, FRAME_SKIP, NOOP
+from torchvision.transforms.transforms import ToPILImage
+from PIL import ImageDraw
 
 if TYPE_CHECKING:
     from ..agent.psdrl import PSDRL
@@ -111,11 +112,7 @@ def create_directories(env: str, algorithm: str, name: str):
 
 
 def load(agent: "PSDRL", load_dir: str):
-    agent.model.transition_network.load_state_dict(
-        torch.load(load_dir + "transition.pt")
-    )
-    agent.model.terminal_network.load_state_dict(torch.load(load_dir + "terminal.pt"))
-    agent.model.autoencoder.load_state_dict(torch.load(load_dir + "autoencoder.pt"))
+    agent.model.load_state_dict(torch.load(load_dir + "agent_model.pt"))
     agent.value_network.load_state_dict(torch.load(load_dir + "value.pt"))
     with open(load_dir + "replay.pt".format(load_dir), "rb") as fn:
         agent.dataset.episodes = pickle.load(fn)
@@ -139,3 +136,37 @@ def extract_episode_data(episodes: list):
         r,
         t,
     )
+
+
+def generate_rollout_img(states, rewards, dones):
+    pred_states = states[0]
+
+    resize_factor = 2
+    N = len(pred_states)
+    W, H = (resize_factor * size for size in pred_states[0].shape)
+    border = 20
+    height = 2 * (H + border)
+    width = N * (W + border)
+    image = Image.new("L", (width, height))
+    to_img = ToPILImage()
+
+    for i, (s_hat, s, r_hat, r, t_hat, t) in enumerate(zip(*states, *rewards, *dones)):
+        # predicted
+        pred_img = to_img(s_hat).resize((W, H))
+        image.paste(pred_img, ((W + border) * i, border))
+        ImageDraw.Draw(image).text(
+            ((W + border) * i + int(W / 3), 5),
+            f"{round(r_hat, 2)} ({round(t_hat, 2)})",
+            "white",
+        )
+
+        # actual
+        actual_img = to_img(s).resize((W, H))
+        image.paste(actual_img, ((W + border) * i, H + 2 * border))
+        ImageDraw.Draw(image).text(
+            ((W + border) * i + int(W / 3), H + border + 5),
+            f"{round(r, 2)} ({round(t, 2)})",
+            "white",
+        )
+
+    return image
