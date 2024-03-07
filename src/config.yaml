@@ -9,6 +9,7 @@ visual: True
 
 algorithm:
   name: PSDRL
+  bayesian: neural-linear
   reward_prior: 1e-3
   transition_prior: 1e-3
   update_freq: 1e3

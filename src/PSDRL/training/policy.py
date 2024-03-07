@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import torch
 
-from ..bayes.neural_linear_model import NeuralLinearModel
+from ..agent.agent_model import AgentModel
 from ..common.replay import Dataset
 from ..common.settings import TP_THRESHOLD
 
@@ -46,7 +46,7 @@ class PolicyTrainer:
         states: torch.tensor,
         actions: torch.tensor,
         h: torch.tensor,
-        model: NeuralLinearModel,
+        model: AgentModel,
     ):
         """
         Simulate one timestep using the sampled model, and retain the hidden states (h) that correspond to the actions
@@ -79,7 +79,7 @@ class PolicyTrainer:
         )
         return y.reshape(-1, 1)
 
-    def train_(self, model: NeuralLinearModel, dataset: Dataset):
+    def train_(self, model: AgentModel, dataset: Dataset):
         """
         Update the value network using B sequences of length L for the specified number of training iterations (kappa).
         For the states in all B sequences at a given timestep, the next states and rewards are simulated in parallel
