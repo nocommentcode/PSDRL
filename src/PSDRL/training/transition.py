@@ -56,7 +56,8 @@ class TransitionModelTrainer:
                 )
                 t_pred = self.terminal_network.forward(s1)
 
-                self.transition_network.loss += self.transition_network.loss_function(
+                transition_loss = self.transition_network.get_loss_fn()
+                self.transition_network.loss += transition_loss(
                     torch.cat((s1, r[:, idx]), dim=1), s1_r_pred
                 )
                 self.terminal_network.loss += self.terminal_network.loss_function(

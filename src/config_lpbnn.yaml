@@ -40,6 +40,10 @@ replay:
   sequence_length: 250
 
 transition:
+  ensemble_size: 4
+  vae_embedding_size: 32
+  init_strategy: ones
+  elbow_weight: 1
   training_iterations: 3
   hidden_dim: 1536
   gru_dim: 756

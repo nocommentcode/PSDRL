@@ -28,6 +28,14 @@ class DataManager:
     def log_images(self, name: str, images: list, timestep: int):
         pass
 
+    def log_videos(self, name: str, video_frames: list, timestep: int):
+        path = self.logdir + "videos/" + str(timestep) + "/"
+        os.mkdir(path)
+        for i, video in enumerate(video_frames):
+            video[0].save(
+                f"{path}{name}_{i}.gif", save_all=True, append_images=video[1:], loop=0
+            )
+
     def save(self, agent: "PSDRL", timestep: int):
         path = self.logdir + "checkpoints/" + str(timestep) + "/"
         os.mkdir(path)

@@ -5,7 +5,7 @@ import numpy as np
 from ruamel.yaml import YAML
 import gym
 
-from PSDRL.common.utils import init_env, load
+from PSDRL.common.utils import generate_diversity_video_frames, init_env, load
 from PSDRL.logging.logger import Logger
 from PSDRL.logging import data_manager_factory
 from PSDRL.agent.psdrl import PSDRL
@@ -42,6 +42,9 @@ def run_experiment(
     gen_rollouts: bool,
     rollout_freq: int,
     n_rollouts: int,
+    gen_pred_diversity: bool,
+    diversity_freq: int,
+    n_diversity: int,
 ):
     ep = 0
     experiment_step = 0
@@ -68,6 +71,11 @@ def run_experiment(
                     agent.rollout_predictions(test_env) for _ in range(n_rollouts)
                 ]
                 logger.log_rollout(rollouts, experiment_step)
+
+            if gen_pred_diversity and experiment_step % diversity_freq == 0:
+                trajectories = agent.check_prediction_diversity(test_env, n_diversity)
+                frames = generate_diversity_video_frames(trajectories)
+                logger.log_diversity(frames, experiment_step)
 
             action = agent.select_action(current_observation, episode_step)
             observation, reward, done, _, _ = env.step(action)
@@ -127,6 +135,9 @@ def main(config: dict):
         config["logging"]["n_rollouts"] > 0,
         config["logging"]["rollout_freq"],
         config["logging"]["n_rollouts"],
+        config["logging"]["n_diversity"] > 0,
+        config["logging"]["diveristy_freq"],
+        config["logging"]["n_diversity"],
     )
 
 
