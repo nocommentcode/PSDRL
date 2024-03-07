@@ -108,6 +108,7 @@ def create_directories(env: str, algorithm: str, name: str):
     logdir = folder_name + "/{}/".format(number)
     os.mkdir(logdir)
     os.mkdir(logdir + "checkpoints/")
+    os.mkdir(logdir + "videos/")
     return logdir
 
 
@@ -170,3 +171,15 @@ def generate_rollout_img(states, rewards, dones):
         )
 
     return image
+
+
+def generate_diversity_video_frames(trajectories):
+    videos = []
+    to_img = ToPILImage()
+
+    for traj in trajectories:
+        video = []
+        for state in traj:
+            video.append(to_img(state))
+        videos.append(video)
+    return videos

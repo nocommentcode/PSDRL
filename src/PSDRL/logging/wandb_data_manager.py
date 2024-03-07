@@ -1,3 +1,4 @@
+import os
 from typing import TYPE_CHECKING
 import numpy as np
 
@@ -6,6 +7,7 @@ if TYPE_CHECKING:
 
 import wandb
 from ..logging.data_manager import DataManager
+from pathlib import Path
 
 
 class WandbDataManager(DataManager):
@@ -25,6 +27,15 @@ class WandbDataManager(DataManager):
 
     def log_images(self, name: str, images: list, timestep: int):
         wandb.log({name: [wandb.Image(image) for image in images]}, timestep)
+
+    def log_videos(self, name: str, video_frames: list, timestep: int):
+        super().log_videos(name, video_frames, timestep)
+        videos = []
+        directory = Path(self.logdir + "videos/" + str(timestep))
+        for path in directory.iterdir():
+            videos.append(wandb.Video(str(path), format="gif"))
+
+        wandb.log({name: videos}, step=timestep)
 
     def save(self, agent: "PSDRL", timestep: int):
         super().save(agent, timestep)
