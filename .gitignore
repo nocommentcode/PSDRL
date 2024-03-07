@@ -3,4 +3,4 @@
 /.idea
 *__pycache__
 /src/wandb
-config_local.yaml
+*_local.yaml
