@@ -9,6 +9,7 @@ from ..networks.value import Network as ValueNetwork
 from ..training.policy import PolicyTrainer
 from ..common.settings import TP_THRESHOLD
 from ..agent.neural_linear_agent_model import NeuralLinearAgentModel
+from ..agent.lp_bnn_agent_model import LPBNNAgentModel
 import torch.nn as nn
 
 
@@ -53,6 +54,10 @@ class PSDRL(nn.Module):
 
         if config["algorithm"]["bayesian"] == "neural-linear":
             self.model = NeuralLinearAgentModel(config, self.device, self.actions)
+        elif config["algorithm"]["bayesian"] == "lpbnn":
+            self.model = LPBNNAgentModel(
+                config, self.device, self.actions, self.random_state
+            )
         else:
             raise ValueError(f"agent {config['algorithm']['bayesian']} not supported")
 
@@ -118,49 +123,77 @@ class PSDRL(nn.Module):
             self.model.train(self.dataset)
             self.policy_trainer.train_(self.model, self.dataset)
 
-    @torch.no_grad
-    def rollout_predictions(self, env: gym.Env, num_steps: int = 15):
-
+    def play_through_episode(
+        self,
+        initial_state: np.ndarray,
+        num_steps: int,
+    ):
         def embed_obs(obs):
             obs = preprocess_image(obs)
             obs = torch.from_numpy(obs).float().to(self.device)
             return self.model.embed_observation(obs)
 
-        obs, _ = env.reset()
-        done = False
+        states = [initial_state]
+        actions = []
+        rewards = [0]
+        terminals = [0]
 
-        pred_states = [obs]
-        actual_states = [obs]
-
-        pred_reward = [0]
-        acutal_reward = [0]
-
-        pred_terminal = [0]
-        acutal_terminal = [0]
-
-        s = embed_obs(obs)
-        for i in range(num_steps):
+        self.model.reset_hidden_state()
+        s = embed_obs(initial_state)
+        for _ in range(num_steps):
             s_, r, t, _ = self.model.predict(s, self.model.prev_state)
-            a = self.select_action(obs, i)
+            a = self._select_action(s)
 
             s = s_[a].unsqueeze(0)
             r = r[a]
             t = t[a]
 
-            pred_reward.append(r.item())
-            pred_terminal.append(t.item())
-            pred_states.append(self.model.decode_observation(s).detach().cpu().numpy())
+            states.append(self.model.decode_observation(s).detach().cpu().numpy())
+            actions.append(a.item())
+            rewards.append(r.item())
+            terminals.append(t.item())
 
-            obs, reward, done, _, _ = env.step(a)
-            actual_states.append(obs)
-            acutal_reward.append(reward)
-            acutal_terminal.append(1 if done else 0)
+        return states, actions, rewards, terminals
 
-            if done:
-                break
+    def rollout_predictions(self, env: gym.Env, num_steps: int = 50):
+        with torch.no_grad():
+            obs, _ = env.reset()
 
-        return (
-            (pred_states, actual_states),
-            (pred_reward, acutal_reward),
-            (pred_terminal, acutal_terminal),
-        )
+            # play episode on policy
+            pred_states, actions, pred_rewards, pred_terminals = (
+                self.play_through_episode(obs, num_steps)
+            )
+
+            # get actual episode
+            actual_states = [obs]
+            acutal_reward = [0]
+            acutal_terminal = [0]
+            done = False
+            for a in actions:
+                obs, reward, done, _, _ = env.step(a)
+                actual_states.append(obs)
+                acutal_reward.append(reward)
+                acutal_terminal.append(1 if done else 0)
+
+                if done:
+                    break
+
+            return (
+                (pred_states, actual_states),
+                (pred_rewards, acutal_reward),
+                (pred_terminals, acutal_terminal),
+            )
+
+    def check_prediction_diversity(
+        self, env: gym.Env, num_samples: int = 5, num_steps: int = 50
+    ):
+        with torch.no_grad():
+            obs, _ = env.reset()
+
+            trajectories = []
+            for _ in range(num_samples):
+                self.model.resample_model()
+                pred_traj, *_ = self.play_through_episode(obs.copy(), num_steps)
+                trajectories.append(pred_traj)
+
+            return trajectories
