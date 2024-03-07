@@ -5,7 +5,6 @@ from ..bayes.neural_linear_model import NeuralLinearModel
 from ..common.replay import Dataset
 from ..networks.terminal import Network as TerminalNetwork
 from ..networks.transition import Network as TransitionNetwork
-from ..training.representation import RepresentationTrainer
 from ..training.transition import TransitionModelTrainer
 
 
@@ -33,10 +32,6 @@ class NeuralLinearAgentModel(AgentModel):
             self.device,
         )
 
-        self.representation_trainer = RepresentationTrainer(
-            config["representation"]["training_iterations"], self.autoencoder
-        )
-
         self.transition_trainer = TransitionModelTrainer(
             config["transition"],
             transition_network,
@@ -58,3 +53,6 @@ class NeuralLinearAgentModel(AgentModel):
         self, states: torch.tensor, h: torch.tensor
     ) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
         return self.model.predict(states, h)
+
+    def resample_model(self):
+        self.model.sample()

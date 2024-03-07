@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from ..networks.representation import AutoEncoder
 from ..common.replay import Dataset
+from ..training.representation import RepresentationTrainer
 
 
 class AgentModel(nn.Module):
@@ -11,6 +12,9 @@ class AgentModel(nn.Module):
         self.device = device
 
         self.autoencoder = AutoEncoder(config["representation"], self.device)
+        self.representation_trainer = RepresentationTrainer(
+            config["representation"]["training_iterations"], self.autoencoder
+        )
 
         self.prev_state_shape = config["transition"]["gru_dim"]
         self.prev_state = torch.zeros(self.prev_state_shape).to(self.device)
@@ -37,4 +41,9 @@ class AgentModel(nn.Module):
     ) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
         raise NotImplementedError(
             "predict is not implemented for abstract class 'AgentModel'"
+        )
+
+    def resample_model(self):
+        raise NotImplementedError(
+            "resample_model is not implemented for abstract class 'AgentModel'"
         )
