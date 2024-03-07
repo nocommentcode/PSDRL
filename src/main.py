@@ -5,9 +5,9 @@ import numpy as np
 from ruamel.yaml import YAML
 import gym
 
-from PSDRL.common.data_manager import DataManager
 from PSDRL.common.utils import init_env, load
-from PSDRL.common.logger import Logger
+from PSDRL.logging.logger import Logger
+from PSDRL.logging import data_manager_factory
 from PSDRL.agent.psdrl import PSDRL
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -39,6 +39,9 @@ def run_experiment(
     time_limit: int,
     save: bool,
     save_freq: int,
+    gen_rollouts: bool,
+    rollout_freq: int,
+    n_rollouts: int,
 ):
     ep = 0
     experiment_step = 0
@@ -59,6 +62,12 @@ def run_experiment(
                 logger.log_episode(
                     experiment_step, train_reward=np.nan, test_reward=test_reward
                 )
+
+            if gen_rollouts and experiment_step % rollout_freq == 0:
+                rollouts = [
+                    agent.rollout_predictions(test_env) for _ in range(n_rollouts)
+                ]
+                logger.log_rollout(rollouts, experiment_step)
 
             action = agent.select_action(current_observation, episode_step)
             observation, reward, done, _, _ = env.step(action)
@@ -91,7 +100,8 @@ def run_experiment(
 
 
 def main(config: dict):
-    data_manager = DataManager(config)
+
+    data_manager = data_manager_factory(config)
     logger = Logger(data_manager)
     exp_config = config["experiment"]
 
@@ -112,8 +122,11 @@ def main(config: dict):
         exp_config["test"],
         exp_config["test_freq"],
         exp_config["time_limit"],
-        config["save"],
-        config["save_freq"],
+        config["logging"]["save_model"],
+        config["logging"]["save_freq"],
+        config["logging"]["n_rollouts"] > 0,
+        config["logging"]["rollout_freq"],
+        config["logging"]["n_rollouts"],
     )
 
 

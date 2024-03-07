@@ -1,18 +1,20 @@
+import gym
 import torch
 import numpy as np
 
-from ..common.logger import Logger
+from ..logging.logger import Logger
 from ..common.replay import Dataset
 from ..common.utils import preprocess_image
 from ..networks.value import Network as ValueNetwork
 from ..training.policy import PolicyTrainer
 from ..common.settings import TP_THRESHOLD
-from ..agent.NeuralLinearAgentModel import NeuralLinearAgentModel
+from ..agent.neural_linear_agent_model import NeuralLinearAgentModel
+import torch.nn as nn
 
 
-class PSDRL:
+class PSDRL(nn.Module):
     def __init__(self, config: dict, actions: list, logger: Logger, seed: int = None):
-
+        super().__init__()
         self.device = "cpu" if not config["gpu"] else "cuda:0"
         self.random_state = np.random.RandomState(seed)
 
@@ -49,9 +51,10 @@ class PSDRL:
             self.actions,
         )
 
-        if config["algorithm"]["bayesian"] == 'neural-linear':
-            self.model = NeuralLinearAgentModel(
-                config, self.device, self.actions)
+        if config["algorithm"]["bayesian"] == "neural-linear":
+            self.model = NeuralLinearAgentModel(config, self.device, self.actions)
+        else:
+            raise ValueError(f"agent {config['algorithm']['bayesian']} not supported")
 
     def select_action(self, obs: np.array, step: int):
         """
@@ -75,16 +78,14 @@ class PSDRL:
         Return greedy action with respect to the current value network and all possible transitions predicted
         with the current sampled model (Equation 8).
         """
-        states, rewards, terminals, h = self.model.predict(
-            obs, self.model.prev_state)
+        states, rewards, terminals, h = self.model.predict(obs, self.model.prev_state)
         v = self.discount * (
             self.value_network.predict(torch.cat((states, h), dim=1))
             * (terminals < TP_THRESHOLD)
         )
         values = (rewards + v).detach().cpu().numpy()
 
-        action = self.random_state.choice(
-            np.where(np.isclose(values, max(values)))[0])
+        action = self.random_state.choice(np.where(np.isclose(values, max(values)))[0])
 
         self.model.set_hidden_state(h[action])
 
@@ -116,3 +117,50 @@ class PSDRL:
         if ep and timestep % update_freq == 0:
             self.model.train(self.dataset)
             self.policy_trainer.train_(self.model, self.dataset)
+
+    @torch.no_grad
+    def rollout_predictions(self, env: gym.Env, num_steps: int = 15):
+
+        def embed_obs(obs):
+            obs = preprocess_image(obs)
+            obs = torch.from_numpy(obs).float().to(self.device)
+            return self.model.embed_observation(obs)
+
+        obs, _ = env.reset()
+        done = False
+
+        pred_states = [obs]
+        actual_states = [obs]
+
+        pred_reward = [0]
+        acutal_reward = [0]
+
+        pred_terminal = [0]
+        acutal_terminal = [0]
+
+        s = embed_obs(obs)
+        for i in range(num_steps):
+            s_, r, t, _ = self.model.predict(s, self.model.prev_state)
+            a = self.select_action(obs, i)
+
+            s = s_[a].unsqueeze(0)
+            r = r[a]
+            t = t[a]
+
+            pred_reward.append(r.item())
+            pred_terminal.append(t.item())
+            pred_states.append(self.model.decode_observation(s).detach().cpu().numpy())
+
+            obs, reward, done, _, _ = env.step(a)
+            actual_states.append(obs)
+            acutal_reward.append(reward)
+            acutal_terminal.append(1 if done else 0)
+
+            if done:
+                break
+
+        return (
+            (pred_states, actual_states),
+            (pred_reward, acutal_reward),
+            (pred_terminal, acutal_terminal),
+        )

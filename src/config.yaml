@@ -1,10 +1,15 @@
 gpu: true
 data_dir: ""
-save: false
-save_freq: 10000
 load: false
 load_dir: "./logdir/[env]/PSDRL-[name]/[seed]/checkpoints/[timestep]/"
 visual: True
+
+logging:
+  data_manager: wandb
+  save_model: True
+  save_freq: 1.0e5 
+  n_rollouts: 5
+  rollout_freq: 3.0e3
 
 
 algorithm:
