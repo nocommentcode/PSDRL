@@ -3,3 +3,6 @@ Pillow
 ruamel.yaml
 scikit_image
 torch
+wandb
+gym[accept-rom-license]
+gym[other]

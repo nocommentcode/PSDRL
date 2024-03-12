@@ -130,12 +130,11 @@ class PSDRL(nn.Module):
         update_freq = (
             self.update_freq if timestep > self.warmup_length else self.warmup_freq
         )
+        self.update_epsilon()
 
         if ep and timestep % update_freq == 0:
-            self.model.train(self.dataset)
+            self.model.train_(self.dataset)
             self.policy_trainer.train_(self.model, self.dataset)
-
-        self.update_epsilon()
 
     def play_through_episode(
         self,

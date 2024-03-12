@@ -3,9 +3,6 @@ from typing import Tuple
 from ..agent.agent_model import AgentModel
 from ..bayes.neural_linear_model import NeuralLinearModel
 from ..common.replay import Dataset
-from ..networks.terminal import Network as TerminalNetwork
-from ..networks.transition import Network as TransitionNetwork
-from ..training.transition import TransitionModelTrainer
 
 
 class NeuralLinearAgentModel(AgentModel):
@@ -22,9 +19,9 @@ class NeuralLinearAgentModel(AgentModel):
             self.device,
         )
 
-    def train(self, dataset: Dataset):
-        super().train(dataset)
-
+    def train_(self, dataset: Dataset):
+        self.representation_trainer.train_(dataset)
+        self.transition_trainer.train_(dataset)
         self.model.update_posteriors(dataset)
         self.model.sample()
 

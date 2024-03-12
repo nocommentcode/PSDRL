@@ -4,6 +4,7 @@ from ..networks.lp_bnn_transition import LPBNNTransitionModel
 from ..networks.terminal import Network as TerminalNetwork
 from ..training.transition import TransitionModelTrainer
 from numpy.random import RandomState
+from ..common.replay import Dataset
 
 import torch
 
@@ -83,6 +84,10 @@ class LPBNNAgentModel(AgentModel):
             terminals = self.terminal_network.predict(states)
 
             return states, rewards.reshape(-1, 1), terminals, h
+
+    def train_(self, dataset: Dataset):
+        self.representation_trainer.train_(dataset)
+        self.transition_trainer.train_(dataset)
 
     def resample_model(self):
         # nothing to do here, lp-bnn samples new weights in the VAE for each forward pass
