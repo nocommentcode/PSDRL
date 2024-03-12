@@ -77,7 +77,7 @@ class LPBNNAgentModel(AgentModel):
     ) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
         with torch.no_grad():
             state_actions, h = self.state_action_batch(states, h)
-            features, h = self.transition_network(state_actions, h)
+            features, h = self.transition_network.predict(state_actions, h)
 
             states, rewards, h = self.sample_from_ensembles(features, h)
             terminals = self.terminal_network.predict(states)

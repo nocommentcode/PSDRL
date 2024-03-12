@@ -69,7 +69,7 @@ class AgentModel(nn.Module):
             states, self.actions, h, self.num_actions, self.device
         )
 
-        features, h = self.transition_network(state_actions, h)
+        features, h = self.transition_network.predict(state_actions, h)
         states = features[:, :-1]
         rewards = features[:, -1]
         terminals = self.terminal_network.predict(states)
