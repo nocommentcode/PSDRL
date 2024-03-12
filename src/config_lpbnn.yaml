@@ -16,13 +16,14 @@ logging:
 
 algorithm:
   name: PSDRL
-  bayesian: neural-linear
+  bayesian: lpbnn
   reward_prior: 1e-3
   transition_prior: 1e-3
   update_freq: 1e3
   warmup_length: 1e5
   warmup_freq: 250
-  policy_noise: 0.001
+  policy_noise_start: 0.001
+  policy_noise_start: 0.001
 
 experiment:
   suite: atari
@@ -36,7 +37,7 @@ experiment:
 
 replay:
   capacity: 1e5
-  batch_size: 125
+  batch_size: 128
   sequence_length: 250
 
 transition:

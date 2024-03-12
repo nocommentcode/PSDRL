@@ -17,10 +17,12 @@ class Logger:
         for idx, _ in enumerate(tag):
             self.log["scalars"][tag[idx]] = value[idx]
 
-    def log_episode(self, timestep: int, train_reward: int, test_reward: int):
+    def log_episode(
+        self, timestep: int, train_reward: int, test_reward: int, epsilon: float
+    ):
         self.add_scalars(
-            ["Reward/Train_Reward", "Reward/Test_Reward"],
-            [train_reward, test_reward],
+            ["Reward/Train_Reward", "Reward/Test_Reward", "Data/Epsilon"],
+            [train_reward, test_reward, epsilon],
         )
         self.data_manager.update(self.log, timestep)
 

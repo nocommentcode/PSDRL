@@ -22,8 +22,9 @@ algorithm:
   update_freq: 1e3
   warmup_length: 1e5
   warmup_freq: 250
-  policy_noise: 0.001
-
+  policy_noise_start: 0.001
+  policy_noise_end: 0.001
+  
 experiment:
   suite: atari
   env: Pong
