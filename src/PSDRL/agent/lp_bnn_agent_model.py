@@ -1,5 +1,4 @@
 from ..agent.agent_model import AgentModel
-from ..common.replay import Dataset
 from ..common.utils import create_state_action_batch
 from ..networks.lp_bnn_transition import LPBNNTransitionModel
 from ..networks.terminal import Network as TerminalNetwork
@@ -20,11 +19,7 @@ class LPBNNAgentModel(AgentModel):
         actions: torch.tensor,
         random_state: RandomState,
     ) -> None:
-        super().__init__(config, device)
-
-        self.terminal_network = TerminalNetwork(
-            config["representation"]["embed_dim"], config["terminal"], self.device
-        )
+        super().__init__(config, device, actions)
 
         self.transition_network = LPBNNTransitionModel(
             config["representation"]["embed_dim"],
@@ -45,12 +40,6 @@ class LPBNNAgentModel(AgentModel):
 
         self.ensemble_size = config["transition"]["ensemble_size"]
         self.random_state = random_state
-        self.actions = actions
-        self.num_actions = len(actions)
-
-    def train(self, dataset: Dataset):
-        self.representation_trainer.train_(dataset)
-        self.transition_trainer.train_(dataset)
 
     def state_action_batch(self, states, hidden_state):
         state_actions, hidden_state = create_state_action_batch(
@@ -68,9 +57,11 @@ class LPBNNAgentModel(AgentModel):
         return state_actions, hidden_state
 
     def sample_from_ensembles(self, features, hidden_states):
+        index = self.random_state.randint(0, self.ensemble_size)
+
         def sample(output):
             output = output.view((self.ensemble_size, -1, *output.shape[1:]))
-            return self.random_state.choice(output)
+            return output[index]
 
         ensemble_states = features[:, :-1]
         ensemble_rewards = features[:, -1]
@@ -86,7 +77,7 @@ class LPBNNAgentModel(AgentModel):
     ) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
         with torch.no_grad():
             state_actions, h = self.state_action_batch(states, h)
-            features, h = self.transition_network(state_actions, h)
+            features, h = self.transition_network.predict(state_actions, h)
 
             states, rewards, h = self.sample_from_ensembles(features, h)
             terminals = self.terminal_network.predict(states)

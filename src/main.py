@@ -63,7 +63,10 @@ def run_experiment(
                     f"Episode {ep}, Timestep {experiment_step}, Test Reward {test_reward}"
                 )
                 logger.log_episode(
-                    experiment_step, train_reward=np.nan, test_reward=test_reward
+                    experiment_step,
+                    train_reward=np.nan,
+                    test_reward=test_reward,
+                    epsilon=agent.epsilon,
                 )
 
             if gen_rollouts and experiment_step % rollout_freq == 0:
@@ -97,13 +100,17 @@ def run_experiment(
 
             if ep and save and experiment_step % save_freq == 0:
                 logger.data_manager.save(agent, experiment_step)
+
         ep += 1
         print(
             f"Episode {ep}, Timestep {experiment_step}, Train Reward {episode_reward}"
         )
 
         logger.log_episode(
-            experiment_step, train_reward=episode_reward, test_reward=np.nan
+            experiment_step,
+            train_reward=episode_reward,
+            test_reward=np.nan,
+            epsilon=agent.epsilon,
         )
 
 

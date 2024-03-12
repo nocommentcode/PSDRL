@@ -16,15 +16,15 @@ logging:
 
 algorithm:
   name: PSDRL
-  bayesian: lpbnn
+  bayesian: none
   reward_prior: 1e-3
   transition_prior: 1e-3
   update_freq: 1e3
   warmup_length: 1e5
   warmup_freq: 250
-  policy_noise_start: 0.001
-  policy_noise_start: 0.001
-
+  policy_noise_start: 1.0
+  policy_noise_end: 0.001
+  
 experiment:
   suite: atari
   env: Pong
@@ -37,14 +37,10 @@ experiment:
 
 replay:
   capacity: 1e5
-  batch_size: 128
+  batch_size: 125
   sequence_length: 250
 
 transition:
-  ensemble_size: 4
-  vae_embedding_size: 32
-  init_strategy: ones
-  elbow_weight: 1
   training_iterations: 3
   hidden_dim: 1536
   gru_dim: 756

@@ -8,6 +8,7 @@ from ..common.utils import preprocess_image
 from ..networks.value import Network as ValueNetwork
 from ..training.policy import PolicyTrainer
 from ..common.settings import TP_THRESHOLD
+from ..agent.agent_model import AgentModel
 from ..agent.neural_linear_agent_model import NeuralLinearAgentModel
 from ..agent.lp_bnn_agent_model import LPBNNAgentModel
 import torch.nn as nn
@@ -22,7 +23,12 @@ class PSDRL(nn.Module):
         self.num_actions = len(actions)
         self.actions = torch.tensor(actions).to(self.device)
 
-        self.epsilon = config["algorithm"]["policy_noise"]
+        self.epsilon = config["algorithm"]["policy_noise_start"]
+        epsilon_start = config["algorithm"]["policy_noise_start"]
+        epsilon_end = config["algorithm"]["policy_noise_end"]
+        n_steps = config["experiment"]["steps"]
+        self.epsilon_decay_fact = (epsilon_end / epsilon_start) ** (1 / n_steps)
+
         self.update_freq = config["algorithm"]["update_freq"]
         self.warmup_length = config["algorithm"]["warmup_length"]
         self.warmup_freq = config["algorithm"]["warmup_freq"]
@@ -58,6 +64,8 @@ class PSDRL(nn.Module):
             self.model = LPBNNAgentModel(
                 config, self.device, self.actions, self.random_state
             )
+        elif config["algorithm"]["bayesian"] == "none":
+            self.model = AgentModel(config, self.device, self.actions)
         else:
             raise ValueError(f"agent {config['algorithm']['bayesian']} not supported")
 
@@ -96,6 +104,9 @@ class PSDRL(nn.Module):
 
         return self.actions[action]
 
+    def update_epsilon(self):
+        self.epsilon *= self.epsilon_decay_fact
+
     def update(
         self,
         current_obs: np.array,
@@ -119,9 +130,12 @@ class PSDRL(nn.Module):
         update_freq = (
             self.update_freq if timestep > self.warmup_length else self.warmup_freq
         )
+
         if ep and timestep % update_freq == 0:
             self.model.train(self.dataset)
             self.policy_trainer.train_(self.model, self.dataset)
+
+        self.update_epsilon()
 
     def play_through_episode(
         self,
@@ -185,7 +199,7 @@ class PSDRL(nn.Module):
             )
 
     def check_prediction_diversity(
-        self, env: gym.Env, num_samples: int = 5, num_steps: int = 50
+        self, env: gym.Env, num_samples: int = 5, num_steps: int = 500
     ):
         with torch.no_grad():
             obs, _ = env.reset()

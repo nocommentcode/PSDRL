@@ -95,7 +95,7 @@ class PolicyTrainer:
                 if idx % self.target_update_freq == 0:
                     self.target_net = deepcopy(self.value_network.layers)
 
-                s = model.autoencoder.embed(o[:, idx])
+                s = model.embed_observation(o[:, idx])
                 inputs = torch.cat((s, self.prev_states), dim=1)
 
                 rewards, next_states, terminals, self.prev_states, h1 = self.simulate(
