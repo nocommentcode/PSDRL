@@ -58,7 +58,7 @@ class AgentModel(nn.Module):
     def decode_observation(self, obs: torch.tensor) -> torch.tensor:
         return self.autoencoder.decoder(obs)
 
-    def train(self, dataset: Dataset):
+    def train_(self, dataset: Dataset):
         self.representation_trainer.train_(dataset)
         self.transition_trainer.train_(dataset)
 
