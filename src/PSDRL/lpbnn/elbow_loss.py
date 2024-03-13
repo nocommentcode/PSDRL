@@ -1,11 +1,4 @@
-from ..common.settings import TM_LOSS_F
 from .Rank1VAE import Rank1VAE
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from ..networks import LPBNNTransitionModel
-
-
 import torch
 from torch import nn
 
@@ -17,6 +10,8 @@ class LPBNNElbowLoss:
             if isinstance(module, Rank1VAE):
                 losses.append(self.calc_loss(module))
 
+        if len(losses) == 0:
+            return 0
         return sum(losses) / len(losses)
 
     def calc_loss(self, module: Rank1VAE):

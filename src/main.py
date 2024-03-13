@@ -133,6 +133,7 @@ def main(config: dict):
     set_seeds(exp_config["seed"], env, test_env)
 
     agent = PSDRL(config, actions, logger, config["experiment"]["seed"])
+    print(str(agent))
     if config["load"]:
         load(agent, config["load_dir"])
 

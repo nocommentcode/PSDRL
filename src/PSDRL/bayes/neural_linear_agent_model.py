@@ -1,7 +1,7 @@
 import torch
 from typing import Tuple
 from ..agent.agent_model import AgentModel
-from ..bayes.neural_linear_model import NeuralLinearModel
+from .neural_linear_model import NeuralLinearModel
 from ..common.replay import Dataset
 
 

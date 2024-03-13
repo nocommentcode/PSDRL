@@ -1,15 +1,8 @@
 from ..agent.agent_model import AgentModel
-from ..common.utils import create_state_action_batch
-from ..lpbnn.lp_bnn_transition import LPBNNTransitionModel
-from ..networks.terminal import Network as TerminalNetwork
-from ..training.LPBNNTransitionModelTrainer import LPBNNTransitionModelTrainer
+from .lp_bnn_transition import LPBNNTransitionModel
+from .lp_bnn_transition_trainer import LPBNNTransitionModelTrainer
 from numpy.random import RandomState
-from ..common.replay import Dataset
-
 import torch
-
-
-from typing import Tuple
 
 
 class LPBNNAgentModel(AgentModel):
