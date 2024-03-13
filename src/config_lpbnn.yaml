@@ -17,8 +17,6 @@ logging:
 algorithm:
   name: PSDRL
   bayesian: lpbnn
-  reward_prior: 1e-3
-  transition_prior: 1e-3
   update_freq: 1e3
   warmup_length: 1e5
   warmup_freq: 250
@@ -51,6 +49,7 @@ transition:
   learning_rate: 1e-4
   bnn_lr: 1e-4
   window_length: 4
+  bnn_layer_count: 1
 
 value:
   training_iterations: 3

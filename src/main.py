@@ -5,7 +5,12 @@ import numpy as np
 from ruamel.yaml import YAML
 import gym
 
-from PSDRL.common.utils import generate_diversity_video_frames, init_env, load
+from PSDRL.common.utils import (
+    generate_diversity_video_frames,
+    init_env,
+    load,
+    set_seeds,
+)
 from PSDRL.logging.logger import Logger
 from PSDRL.logging import data_manager_factory
 from PSDRL.agent.psdrl import PSDRL
@@ -56,7 +61,7 @@ def run_experiment(
         current_observation, _ = env.reset()
         done = False
         while not done:
-
+            agent.eval()
             if test and experiment_step % test_freq == 0:
                 test_reward = run_test_episode(test_env, agent, time_limit)
                 print(
@@ -80,6 +85,7 @@ def run_experiment(
                 frames = generate_diversity_video_frames(trajectories)
                 logger.log_diversity(frames, experiment_step)
 
+            agent.train()
             action = agent.select_action(current_observation, episode_step)
             observation, reward, done, _, _ = env.step(action)
             done = done or episode_step == time_limit
@@ -123,6 +129,8 @@ def main(config: dict):
     env, actions, test_env = init_env(
         exp_config["suite"], exp_config["env"], exp_config["test"]
     )
+
+    set_seeds(exp_config["seed"], env, test_env)
 
     agent = PSDRL(config, actions, logger, config["experiment"]["seed"])
     if config["load"]:

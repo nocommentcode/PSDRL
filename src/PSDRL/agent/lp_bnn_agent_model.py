@@ -18,6 +18,7 @@ class LPBNNAgentModel(AgentModel):
         config: dict,
         device: str,
         actions: torch.tensor,
+        random_state: RandomState,
     ) -> None:
         super().__init__(config, device, actions)
 
@@ -26,6 +27,7 @@ class LPBNNAgentModel(AgentModel):
             len(actions),
             config["transition"],
             self.device,
+            random_state,
         )
 
         self.transition_trainer = LPBNNTransitionModelTrainer(

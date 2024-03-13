@@ -61,7 +61,9 @@ class PSDRL(nn.Module):
         if config["algorithm"]["bayesian"] == "neural-linear":
             self.model = NeuralLinearAgentModel(config, self.device, self.actions)
         elif config["algorithm"]["bayesian"] == "lpbnn":
-            self.model = LPBNNAgentModel(config, self.device, self.actions)
+            self.model = LPBNNAgentModel(
+                config, self.device, self.actions, self.random_state
+            )
         elif config["algorithm"]["bayesian"] == "none":
             self.model = AgentModel(config, self.device, self.actions)
         else:
