@@ -69,11 +69,12 @@ class LPBNNTransitionModelTrainer:
             self.transition_network.determ_optimizer.step()
 
         if self.transition_network.bnn_optimizer is not None:
+            self.transition_network.bnn_layer_loss /= window_idx + 1
+            self.transition_network.bnn_elbow_loss /= window_idx + 1
             bnn_total_loss = (
                 self.transition_network.bnn_layer_loss
                 + self.elbow_weight * self.transition_network.bnn_elbow_loss
             )
-            bnn_total_loss /= window_idx + 1
             self.transition_network.bnn_optimizer.zero_grad()
             bnn_total_loss.backward()
             self.transition_network.bnn_optimizer.step()
@@ -118,26 +119,25 @@ class LPBNNTransitionModelTrainer:
 
             for idx in range(length):
                 state = self.autoencoder.embed(o[:, idx])
+                next_state = self.autoencoder.embed(o1[:, idx])
                 state_action = state_action_append(
                     state, a[:, idx], self.num_actions, self.device
                 )
 
-                next_state = self.autoencoder.embed(o1[:, idx])
-                transition_target = torch.cat((next_state, r[:, idx]), dim=1)
-
-                terminal_pred = self.terminal_network.forward(next_state)
-                self.accumulate_terminal_loss(t[:, idx], terminal_pred)
-
                 bnn_pred, determ_pred, self.prev_states = (
                     self.transition_network.forward(state_action, self.prev_states)
                 )
+                terminal_pred = self.terminal_network.forward(next_state)
+
+                transition_target = torch.cat((next_state, r[:, idx]), dim=1)
                 self.accumulate_transition_loss(
                     transition_target, bnn_pred, determ_pred
                 )
+                self.accumulate_terminal_loss(t[:, idx], terminal_pred)
 
                 if window_idx == self.window_length or idx == length - 1:
-                    self.terminal_step(window_idx)
                     self.transition_step(window_idx)
+                    self.terminal_step(window_idx)
                     self.prev_states = self.prev_states.detach()
 
                     names, values = self.add_terminal_log([], [])
