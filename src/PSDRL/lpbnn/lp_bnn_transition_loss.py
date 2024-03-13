@@ -10,21 +10,10 @@ import torch
 from torch import nn
 
 
-class LPBNNTransitionLoss:
-    def __init__(self, config: dict, model: "LPBNNTransitionModel") -> None:
-        self.model = model
-        self.accuracy_loss_fn = TM_LOSS_F
-        self.elbow_weight = config["elbow_weight"]
-
-    def __call__(self, actual, prediction) -> torch.Any:
-        accuracy_loss = self.accuracy_loss_fn(actual, prediction)
-        elbow_loss = self.get_elbow_loss()
-
-        return accuracy_loss + self.elbow_weight * elbow_loss
-
-    def get_elbow_loss(self) -> torch.Any:
+class LPBNNElbowLoss:
+    def __call__(self, model) -> torch.Any:
         losses = []
-        for module in self.model.modules():
+        for module in model.modules():
             if isinstance(module, Rank1VAE):
                 losses.append(self.calc_loss(module))
 
