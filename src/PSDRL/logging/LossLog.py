@@ -7,10 +7,12 @@ class LossLog:
     def __add__(self, other):
         self.n += 1
         self.total += other if type(other) == int else other.item()
+        return self
 
     def __iadd__(self, other):
         self.n += 1
         self.total += other if type(other) == int else other.item()
+        return self
 
     def get_scalar(self):
         return (

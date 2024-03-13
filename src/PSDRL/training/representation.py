@@ -21,6 +21,7 @@ class RepresentationTrainer:
                 self.ae.loss = self.ae.loss_function(sequence, decode_s)
                 self.ae.loss.backward()
                 self.ae.optimizer.step()
+                print(self.ae.loss, loss_log.total)
                 loss_log += self.ae.loss
 
         dataset.logger.log_losses(loss_log)
