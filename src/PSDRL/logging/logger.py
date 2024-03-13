@@ -26,6 +26,9 @@ class Logger:
         )
         self.data_manager.update(self.log, timestep)
 
+    def send_log(self, timestep: int):
+        self.data_manager.update(self.log, timestep)
+
     def log_rollout(self, rollouts, timestep: int):
         images = [
             generate_rollout_img(states, rewards, dones)

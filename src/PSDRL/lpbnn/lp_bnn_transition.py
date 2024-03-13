@@ -1,5 +1,4 @@
 import torch
-
 from ..common.settings import TP_OPTIM
 from ..networks.transition import Network
 from ..lpbnn.LPBNNLinear import LPBNNLinear
@@ -28,9 +27,7 @@ class LPBNNTransitionModel(Network):
         )
         self.layer_loss = 0
 
-        self.bnn_optim = TP_OPTIM(
-            self.bnn_layer.parameters(), lr=config["learning_rate"]
-        )
+        self.bnn_optim = TP_OPTIM(self.bnn_layer.parameters(), lr=config["bnn_lr"])
         self.bnn_acc_loss = 0
         self.bnn_elbow_loss = 0
 
@@ -55,12 +52,15 @@ class LPBNNTransitionModel(Network):
         with torch.no_grad():
             h = self._cell(x, hidden)
             partial_output = self.layers[:-1](torch.cat((h, x), dim=1))
+
             layer_partial_output = torch.concat(
                 [partial_output for _ in range(self.ensemble_size)], 0
             ).to(self.device)
             bnn_output = self.bnn_layer(layer_partial_output)
+
             bnn_output = bnn_output.view(
                 (self.ensemble_size, -1, *bnn_output.shape[1:])
             )
             bnn_output = bnn_output.mean(0)
+
             return bnn_output, h

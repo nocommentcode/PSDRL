@@ -6,7 +6,7 @@ visual: True
 
 logging:
   data_manager: wandb
-  save_model: True
+  save_model: False
   save_freq: 1.0e5 
   n_rollouts: 2
   rollout_freq: 1.0e4  
@@ -23,7 +23,7 @@ algorithm:
   warmup_length: 1e5
   warmup_freq: 250
   policy_noise_start: 0.001
-  policy_noise_start: 0.001
+  policy_noise_end: 0.001
 
 experiment:
   suite: atari
@@ -49,6 +49,7 @@ transition:
   hidden_dim: 1536
   gru_dim: 756
   learning_rate: 1e-4
+  bnn_lr: 1e-5
   window_length: 4
 
 value:

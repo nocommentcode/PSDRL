@@ -1,9 +1,9 @@
 from ..common.settings import TM_LOSS_F
-from ..lpbnn.Rank1VAE import Rank1VAE
+from .Rank1VAE import Rank1VAE
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..networks.lp_bnn_transition import LPBNNTransitionModel
+    from ..networks import LPBNNTransitionModel
 
 
 import torch

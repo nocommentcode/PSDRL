@@ -95,7 +95,6 @@ class PSDRL(nn.Module):
             * (terminals < TP_THRESHOLD)
         )
         values = (rewards + v).detach().cpu().numpy()
-
         action = self.random_state.choice(np.where(np.isclose(values, max(values)))[0])
 
         self.model.set_hidden_state(h[action])
@@ -133,6 +132,7 @@ class PSDRL(nn.Module):
         if ep and timestep % update_freq == 0:
             self.model.train_(self.dataset)
             self.policy_trainer.train_(self.model, self.dataset)
+            self.dataset.logger.send_log(timestep)
 
     def play_through_episode(
         self,

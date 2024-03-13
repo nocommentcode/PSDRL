@@ -1,7 +1,7 @@
 from ..common.replay import Dataset
 from ..common.settings import TM_LOSS_F
 from ..common.utils import state_action_append
-from ..lpbnn.lp_bnn_transition_loss import LPBNNElbowLoss
+from ..lpbnn.elbow_loss import LPBNNElbowLoss
 
 
 import torch
