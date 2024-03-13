@@ -2,6 +2,8 @@ from copy import deepcopy
 
 import torch
 
+from ..logging.LossLog import LossLog
+
 from ..agent.agent_model import AgentModel
 from ..common.replay import Dataset
 from ..common.settings import TP_THRESHOLD
@@ -37,9 +39,10 @@ class PolicyTrainer:
 
         outputs = self.value_network.forward(inputs)
         self.value_network.loss = self.value_network.loss_function(outputs, targets)
-
         self.value_network.loss.backward()
         self.value_network.optimizer.step()
+
+        return self.value_network.loss
 
     def simulate(
         self,
@@ -86,6 +89,7 @@ class PolicyTrainer:
         using the current sampled model. The simulated elements are used to compute the targets with which the value
         network is updated.
         """
+        loss_log = LossLog("Value")
         for epoch in range(self.training_iterations):
             o, a, _, _, _ = dataset.sample_sequences()
             length = len(o[0])
@@ -108,6 +112,6 @@ class PolicyTrainer:
                     self.target_net,
                 )
 
-                self.train_iter(inputs, targets)
+                loss_log += self.train_iter(inputs, targets)
 
-        dataset.logger.add_scalars("Loss/Value", self.value_network.loss.item())
+        dataset.logger.log_losses(loss_log)

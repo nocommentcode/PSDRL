@@ -1,3 +1,4 @@
+from ..logging.LossLog import LossLog
 from ..common.replay import Dataset
 from ..common.settings import TM_LOSS_F
 from ..common.utils import state_action_append
@@ -79,25 +80,13 @@ class LPBNNTransitionModelTrainer:
             bnn_total_loss.backward()
             self.transition_network.bnn_optimizer.step()
 
-    def add_terminal_log(self, names, values):
-        names.append("Loss/Terminal")
-        values.append(self.terminal_network.loss.item())
-        return names, values
+    def add_terminal_log(self, loss_log: LossLog):
+        loss_log += self.terminal_network.loss
 
-    def add_transition_log(self, names, values):
-        def safe_add(value):
-            values.append(value if type(value) == int else value.item())
-
-        names.append("Loss/Transition Deterministic")
-        safe_add(self.transition_network.determ_layer_loss)
-
-        names.append("Loss/Transition BNN")
-        safe_add(self.transition_network.bnn_layer_loss)
-
-        names.append("Loss/Transition Elbow")
-        safe_add(self.transition_network.bnn_elbow_loss)
-
-        return names, values
+    def add_transition_log(self, determ_log, bnn_log, elbow_log):
+        determ_log += self.transition_network.determ_layer_loss
+        bnn_log += self.transition_network.bnn_layer_loss
+        elbow_log += self.transition_network.bnn_elbow_loss
 
     def train_(self, dataset: Dataset):
         """
@@ -105,6 +94,11 @@ class LPBNNTransitionModelTrainer:
         the specified number of training iterations. Gradients are accumulated for the specified window length, after
         which they are back-propagated.
         """
+        terminal_loss_log = LossLog("Terminal")
+        transition_determ_log = LossLog("Transition Deterministic")
+        transition_bnn_log = LossLog("Transition BNN")
+        transition_elbow_log = LossLog("Transition Elbow")
+
         for _ in range(self.training_iterations):
             o, a, o1, r, t = dataset.sample_sequences()
             length = len(o[0])
@@ -140,12 +134,19 @@ class LPBNNTransitionModelTrainer:
                     self.terminal_step(window_idx)
                     self.prev_states = self.prev_states.detach()
 
-                    names, values = self.add_terminal_log([], [])
-                    names, values = self.add_transition_log(names, values)
-                    dataset.logger.add_scalars(names, values)
-
+                    self.add_terminal_log(terminal_loss_log)
+                    self.add_transition_log(
+                        transition_determ_log, transition_bnn_log, transition_elbow_log
+                    )
                     self.reset_terminal_loss()
                     self.reset_transition_loss()
                     window_idx = 0
                 else:
                     window_idx += 1
+
+        dataset.logger.log_losses(
+            terminal_loss_log,
+            transition_determ_log,
+            transition_bnn_log,
+            transition_elbow_log,
+        )
