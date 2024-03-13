@@ -81,8 +81,11 @@ class PSDRL(nn.Module):
         obs = preprocess_image(obs)
         obs = torch.from_numpy(obs).float().to(self.device)
         obs = self.model.embed_observation(obs)
-
-        return self._select_action(obs)
+        try:
+            return self._select_action(obs)
+        except Exception as e:
+            print(f"Error selecting action: {str(e)}")
+            return self.random_state.choice(self.num_actions)
 
     def _select_action(self, obs: torch.tensor):
         """
@@ -95,6 +98,7 @@ class PSDRL(nn.Module):
             * (terminals < TP_THRESHOLD)
         )
         values = (rewards + v).detach().cpu().numpy()
+
         action = self.random_state.choice(np.where(np.isclose(values, max(values)))[0])
 
         self.model.set_hidden_state(h[action])
