@@ -21,6 +21,7 @@ class TransitionModelTrainer:
         self.num_actions = num_actions
         self.window_length = config["window_length"]
         self.training_iterations = config["training_iterations"]
+        self.gru_dim = config["gru_dim"]
 
         self.autoencoder = autoencoder
         self.transition_trainer = transition_trainer
@@ -40,7 +41,7 @@ class TransitionModelTrainer:
             length = len(o[0])
 
             self.prev_states = torch.zeros(
-                dataset.batch_size, self.transition_network.gru_dim, device=self.device
+                dataset.batch_size, self.gru_dim, device=self.device
             )
 
             window_idx = 0
