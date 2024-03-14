@@ -43,9 +43,14 @@ class TransitionModelTrainer:
             self.prev_states = torch.zeros(
                 dataset.batch_size, self.gru_dim, device=self.device
             )
+            self.transition_trainer.zero_loss()
+            self.terminal_trainer.zero_loss()
 
             window_idx = 0
             for idx in range(length):
+                self.transition_trainer.zero_grads()
+                self.terminal_trainer.zero_grads()
+
                 state = self.autoencoder.embed(o[:, idx])
                 next_state = self.autoencoder.embed(o1[:, idx])
                 state_action = state_action_append(
@@ -60,8 +65,8 @@ class TransitionModelTrainer:
                 self.terminal_trainer.accumulate_loss(next_state, t[:, idx])
 
                 if window_idx == self.window_length or idx == length - 1:
-                    self.transition_trainer.step()
-                    self.terminal_trainer.step()
+                    self.transition_trainer.step(window_idx)
+                    self.terminal_trainer.step(window_idx)
                     self.prev_states = self.prev_states.detach()
                     window_idx = 0
                 else:

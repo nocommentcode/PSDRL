@@ -50,18 +50,25 @@ class LPBNNTransitionTrainer(TransitionTrainer):
 
         return h
 
-    def step(self):
+    def step(self, window_index):
         if self.model.determ_optimizer is not None:
-            self.model.determ_optimizer.zero_grad()
+            self.determ_loss /= window_index + 1
             self.determ_loss.backward()
             self.model.determ_optimizer.step()
 
         if self.model.bnn_optimizer is not None:
             total_bnn_loss = self.bnn_loss + self.elbow_weight * self.elbow_loss
-            self.model.bnn_optimizer.zero_grad()
+            total_bnn_loss /= window_index + 1
             total_bnn_loss.backward()
             self.model.bnn_optimizer.step()
 
+        self.zero_loss()
+
+    def zero_grads(self):
+        self.model.bnn_optimizer.zero_grad()
+        self.model.determ_optimizer.zero_grad()
+
+    def zero_loss(self):
         self.determ_loss = 0
         self.bnn_loss = 0
         self.elbow_loss = 0

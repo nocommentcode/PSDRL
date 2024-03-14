@@ -25,12 +25,19 @@ class TransitionTrainer:
 
         return next_hidden
 
-    def step(self):
-        self.model.optimizer.zero_grad()
+    def step(self, window_index):
+        self.loss /= window_index + 1
+
         self.loss.backward()
         self.model.optimizer.step()
 
-        self.loss = 0
+        self.zero_loss()
 
     def log_losses(self, logger):
         logger.log_losses(self.log)
+
+    def zero_grads(self):
+        self.model.optimizer.zero_grad()
+
+    def zero_loss(self):
+        self.loss = 0
