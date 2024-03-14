@@ -114,7 +114,10 @@ class LPBNNTransitionModel(nn.Module):
         split_point_output = self.pre_split_layers(torch.cat((h, x), dim=1))
 
         determ_output = self.post_split_layers(split_point_output)
-        bnn_output = self.bnn_layers(split_point_output.detach())
+        bnn_input = split_point_output.detach().repeat(
+            [self.ensemble_size, *(1 for _ in split_point_output.shape[1:])]
+        )
+        bnn_output = self.bnn_layers(bnn_input)
 
         return bnn_output, determ_output, h
 

@@ -41,7 +41,12 @@ class LPBNNTransitionModelTrainer:
 
     def accumulate_transition_loss(self, target, bnn_pred, determ_pred):
         self.transition_network.determ_layer_loss += TM_LOSS_F(target, determ_pred)
-        self.transition_network.bnn_layer_loss += TM_LOSS_F(target, bnn_pred)
+        self.transition_network.bnn_layer_loss += TM_LOSS_F(
+            target.repeat(
+                (self.transition_network.ensemble_size, *(1 for _ in target.shape[1:]))
+            ),
+            bnn_pred,
+        )
 
         elbow_loss = LPBNNElbowLoss()
         self.transition_network.bnn_elbow_loss += elbow_loss(
