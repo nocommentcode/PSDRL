@@ -85,4 +85,4 @@ class TransitionModelTrainer:
                 else:
                     window_idx += 1
         dataset.logger.log_losses(terminal_loss_log)
-        dataset.logger.log_losses(transition_loss)
+        dataset.logger.log_losses(transition_loss_log)
