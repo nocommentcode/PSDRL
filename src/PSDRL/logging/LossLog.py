@@ -11,7 +11,9 @@ class LossLog:
 
     def __iadd__(self, other):
         self.n += 1
-        self.total += other if type(other) == int else other.item()
+        self.total += (
+            other if type(other) == int or type(other) == float else other.item()
+        )
         return self
 
     def get_scalar(self):
