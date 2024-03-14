@@ -63,15 +63,15 @@ class LPBNNTransitionModelTrainer:
         self.terminal_network.optimizer.step()
 
     def transition_step(self, window_idx):
+        self.transition_network.determ_layer_loss /= window_idx + 1
         if self.transition_network.determ_optimizer is not None:
-            self.transition_network.determ_layer_loss /= window_idx + 1
             self.transition_network.determ_optimizer.zero_grad()
             self.transition_network.determ_layer_loss.backward()
             self.transition_network.determ_optimizer.step()
 
+        self.transition_network.bnn_layer_loss /= window_idx + 1
+        self.transition_network.bnn_elbow_loss /= window_idx + 1
         if self.transition_network.bnn_optimizer is not None:
-            self.transition_network.bnn_layer_loss /= window_idx + 1
-            self.transition_network.bnn_elbow_loss /= window_idx + 1
             bnn_total_loss = (
                 self.transition_network.bnn_layer_loss
                 + self.elbow_weight * self.transition_network.bnn_elbow_loss
