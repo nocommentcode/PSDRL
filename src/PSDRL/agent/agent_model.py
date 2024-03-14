@@ -6,8 +6,10 @@ from ..common.replay import Dataset
 from ..training.representation import RepresentationTrainer
 from ..networks.terminal import Network as TerminalNetwork
 from ..networks.transition import Network as TransitionNetwork
-from ..training.transition import TransitionModelTrainer
+from ..training.transition_model_trainer import TransitionModelTrainer
 from ..common.utils import create_state_action_batch
+from ..training.terminal_trainer import TerminalTrainer
+from ..training.transition_trainer import TransitionTrainer
 
 
 class AgentModel(nn.Module):
@@ -28,6 +30,7 @@ class AgentModel(nn.Module):
         self.terminal_network = TerminalNetwork(
             config["representation"]["embed_dim"], config["terminal"], self.device
         )
+        terminal_trainer = TerminalTrainer(self.terminal_network)
 
         self.transition_network = TransitionNetwork(
             config["representation"]["embed_dim"],
@@ -35,15 +38,15 @@ class AgentModel(nn.Module):
             config["transition"],
             self.device,
         )
+        transition_trainer = TransitionTrainer(self.transition_network)
 
         self.transition_trainer = TransitionModelTrainer(
             config["transition"],
-            self.transition_network,
             self.autoencoder,
-            self.terminal_network,
-            config["replay"]["batch_size"],
             len(actions),
             self.device,
+            transition_trainer,
+            terminal_trainer,
         )
 
     def reset_hidden_state(self):

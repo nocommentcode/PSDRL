@@ -1,6 +1,6 @@
 from ..agent.agent_model import AgentModel
 from .lp_bnn_transition import LPBNNTransitionModel
-from .lp_bnn_transition_trainer import LPBNNTransitionModelTrainer
+from ..lpbnn.lp_bnn_transition_trainer import LPBNNTransitionTrainer
 from numpy.random import RandomState
 import torch
 
@@ -23,12 +23,7 @@ class LPBNNAgentModel(AgentModel):
             random_state,
         )
 
-        self.transition_trainer = LPBNNTransitionModelTrainer(
-            config["transition"],
-            self.transition_network,
-            self.autoencoder,
-            self.terminal_network,
-            config["replay"]["batch_size"],
-            len(actions),
-            self.device,
+        transition_trainer = LPBNNTransitionTrainer(
+            self.transition_network, config["transition"]["elbow_weight"]
         )
+        self.transition_trainer.transition_trainer = transition_trainer
