@@ -1,7 +1,6 @@
 from ..logging.LossLog import LossLog
 from ..common.settings import TM_LOSS_F
 from .elbow_loss import LPBNNElbowLoss
-from ..networks.terminal import Network as TerminalModel
 from .lp_bnn_transition import LPBNNTransitionModel
 from ..training.transition_trainer import TransitionTrainer
 import torch
@@ -38,9 +37,7 @@ class LPBNNTransitionTrainer(TransitionTrainer):
         # bnn layer loss
         bnn_loss = TM_LOSS_F(
             bnn_output,
-            target.repeat(
-                (self.transition_network.ensemble_size, *(1 for _ in target.shape[1:]))
-            ),
+            target.repeat((self.model.ensemble_size, *(1 for _ in target.shape[1:]))),
         )
         self.bnn_loss += bnn_loss
         self.bnn_log += bnn_loss
