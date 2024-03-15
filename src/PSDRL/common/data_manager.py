@@ -53,9 +53,8 @@ import wandb
 class WandbDataManager(DataManager):
     def __init__(self, config: dict):
         super().__init__(config)
-        run_type = f"PSDRL-{config['algorithm']['bayesian']}"
         env_name = config["experiment"]["env"]
-        wandb.init(project="PSDRL", config=config, tags=[run_type, env_name])
+        wandb.init(project="PSDRL", config=config, tags=[env_name])
 
     def update(self, log: dict, timestep: int):
         wandb.log(
