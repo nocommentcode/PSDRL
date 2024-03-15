@@ -50,7 +50,7 @@ class LPBNNTransitionTrainer(TransitionTrainer):
         # bnn layer loss
         bnn_loss = TM_LOSS_F(
             bnn_output,
-            target.repeat((self.model.ensemble_size, *(1 for _ in target.shape[1:]))),
+            target,  # .repeat((self.model.ensemble_size, *(1 for _ in target.shape[1:]))),
         )
         self.bnn_loss += bnn_loss
         self.bnn_log += bnn_loss
