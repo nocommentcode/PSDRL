@@ -135,6 +135,7 @@ class PSDRL(nn.Module):
         if ep and timestep % update_freq == 0:
             self.model.train_(self.dataset)
             self.policy_trainer.train_(self.model, self.dataset)
+            self.dataset.logger.send_log(timestep)
 
     def play_through_episode(
         self,

@@ -6,7 +6,7 @@ visual: True
 
 logging:
   data_manager: wandb
-  save_model: True
+  save_model: False
   save_freq: 1.0e5 
   n_rollouts: 2
   rollout_freq: 1.0e4  

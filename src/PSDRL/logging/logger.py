@@ -1,5 +1,6 @@
 from typing import Union, TYPE_CHECKING
 from ..common.utils import generate_rollout_img
+from .loss_log import LossLog
 
 if TYPE_CHECKING:
     from .data_manager import DataManager
@@ -35,6 +36,14 @@ class Logger:
 
     def log_diversity(self, trajectories, timestep: int):
         self.data_manager.log_videos("Diversity", trajectories, timestep)
+
+    def send_log(self, timestep: int):
+        self.data_manager.update(self.log, timestep)
+
+    def log_losses(self, *losses: LossLog):
+        for loss in losses:
+            names, values = loss.get_scalar()
+            self.add_scalars(names, values)
 
     def add_replay_statistics(self, episodes: list):
         n_episodes = len(episodes)
