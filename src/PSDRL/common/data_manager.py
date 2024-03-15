@@ -46,3 +46,26 @@ class DataManager:
         with open(path + "replay.pt", "wb") as fn:
             pickle.dump(agent.dataset.episodes, fn)
 
+
+import wandb
+
+
+class WandbDataManager(DataManager):
+    def __init__(self, config: dict):
+        super().__init__(config)
+        run_type = f"PSDRL-{config['algorithm']['bayesian']}"
+        env_name = config["experiment"]["env"]
+        wandb.init(project="PSDRL", config=config, tags=[run_type, env_name])
+
+    def update(self, log: dict, timestep: int):
+        wandb.log(
+            {
+                key: value
+                for key, value in log["scalars"].items()
+                if not np.isnan(value)
+            },
+            step=timestep,
+        )
+
+    def log_images(self, name: str, images: list, timestep: int):
+        wandb.log({name: [wandb.Image(image) for image in images]}, timestep)

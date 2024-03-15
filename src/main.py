@@ -5,7 +5,7 @@ import numpy as np
 from ruamel.yaml import YAML
 import gym
 
-from PSDRL.common.data_manager import DataManager
+from PSDRL.common.data_manager import WandbDataManager
 from PSDRL.common.utils import init_env, load
 from PSDRL.common.logger import Logger
 from PSDRL.agent.psdrl import PSDRL
@@ -53,7 +53,9 @@ def run_experiment(
 
             if test and experiment_step % test_freq == 0:
                 test_reward = run_test_episode(test_env, agent, time_limit)
-                print(f'Episode {ep}, Timestep {experiment_step}, Test Reward {test_reward}')
+                print(
+                    f"Episode {ep}, Timestep {experiment_step}, Test Reward {test_reward}"
+                )
                 logger.log_episode(
                     experiment_step, train_reward=np.nan, test_reward=test_reward
                 )
@@ -79,16 +81,17 @@ def run_experiment(
             if ep and save and experiment_step % save_freq == 0:
                 logger.data_manager.save(agent, experiment_step)
         ep += 1
-        print(f'Episode {ep}, Timestep {experiment_step}, Train Reward {episode_reward}')
+        print(
+            f"Episode {ep}, Timestep {experiment_step}, Train Reward {episode_reward}"
+        )
 
         logger.log_episode(
             experiment_step, train_reward=episode_reward, test_reward=np.nan
         )
 
 
-
 def main(config: dict):
-    data_manager = DataManager(config)
+    data_manager = WandbDataManager(config)
     logger = Logger(data_manager)
     exp_config = config["experiment"]
 
@@ -123,7 +126,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     with open(args.config, "r") as f:
-        yaml = YAML(typ='rt')
+        yaml = YAML(typ="rt")
         config = yaml.load(f)
         config["experiment"]["env"] = args.env
         config["experiment"]["seed"] = args.seed

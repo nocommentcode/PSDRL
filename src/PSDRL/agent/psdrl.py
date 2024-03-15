@@ -31,7 +31,11 @@ class PSDRL:
         self.discount = config["value"]["discount"]
 
         self.dataset = Dataset(
-            logger, config["replay"], config["experiment"]["time_limit"], self.device, seed
+            logger,
+            config["replay"],
+            config["experiment"]["time_limit"],
+            self.device,
+            seed,
         )
 
         self.autoencoder = AutoEncoder(config["representation"], self.device)
@@ -144,3 +148,4 @@ class PSDRL:
             self.model.update_posteriors(self.dataset)
             self.model.sample()
             self.policy_trainer.train_(self.model, self.dataset)
+            self.dataset.logger.send_log(timestep)
