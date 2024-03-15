@@ -74,7 +74,7 @@ class TransitionModelTrainer:
                     for net in self.networks:
                         net.loss /= window_idx + 1
                         net.loss.backward()
-                        nn.utils.clip_grad_value_(net.parameters(), clip_value=1.0)
+                        nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
                         net.optimizer.step()
                     self.prev_states = self.prev_states.detach()
 

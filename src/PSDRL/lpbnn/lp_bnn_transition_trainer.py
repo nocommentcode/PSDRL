@@ -55,10 +55,10 @@ class LPBNNTransitionTrainer(TransitionTrainer):
         if self.model.determ_optimizer is not None:
             self.determ_loss /= window_index + 1
             self.determ_loss.backward()
-            nn.utils.clip_grad_value_(
+            nn.utils.clip_grad_norm_(
                 list(self.model.pre_split_layers.parameters())
                 + list(self.model.post_split_layers.parameters()),
-                clip_value=1.0,
+                max_norm=1.0,
             )
 
             self.model.determ_optimizer.step()
@@ -67,9 +67,8 @@ class LPBNNTransitionTrainer(TransitionTrainer):
             total_bnn_loss = self.bnn_loss + self.elbow_weight * self.elbow_loss
             total_bnn_loss /= window_index + 1
             total_bnn_loss.backward()
-            nn.utils.clip_grad_value_(
-                list(self.model.bnn_layers.parameters()), clip_value=1.0
-            )
+            nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+
             self.model.bnn_optimizer.step()
 
         self.zero_loss()

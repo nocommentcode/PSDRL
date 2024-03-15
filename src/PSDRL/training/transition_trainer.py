@@ -4,6 +4,7 @@ from ..networks.transition import Network as TransitionNetwork
 
 
 import torch
+import torch.nn as nn
 
 
 class TransitionTrainer:
@@ -27,8 +28,9 @@ class TransitionTrainer:
 
     def step(self, window_index):
         self.loss /= window_index + 1
-
         self.loss.backward()
+        nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+
         self.model.optimizer.step()
 
         self.zero_loss()
