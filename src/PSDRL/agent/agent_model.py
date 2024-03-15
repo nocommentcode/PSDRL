@@ -30,7 +30,9 @@ class AgentModel(nn.Module):
         self.terminal_network = TerminalNetwork(
             config["representation"]["embed_dim"], config["terminal"], self.device
         )
-        terminal_trainer = TerminalTrainer(self.terminal_network)
+        terminal_trainer = TerminalTrainer(
+            self.terminal_network, config["terminal"]["grad_norm"]
+        )
 
         self.transition_network = TransitionNetwork(
             config["representation"]["embed_dim"],
@@ -38,7 +40,9 @@ class AgentModel(nn.Module):
             config["transition"],
             self.device,
         )
-        transition_trainer = TransitionTrainer(self.transition_network)
+        transition_trainer = TransitionTrainer(
+            self.transition_network, config["transition"]["grad_norm"]
+        )
 
         self.transition_trainer = TransitionModelTrainer(
             config["transition"],

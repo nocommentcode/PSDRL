@@ -24,6 +24,9 @@ class LPBNNAgentModel(AgentModel):
         )
 
         transition_trainer = LPBNNTransitionTrainer(
-            self.transition_network, config["transition"]["elbow_weight"]
+            self.transition_network,
+            config["transition"]["elbow_weight"],
+            config["transition"]["grad_norm_determ"],
+            config["transition"]["grad_norm_bnn"],
         )
         self.transition_trainer.transition_trainer = transition_trainer

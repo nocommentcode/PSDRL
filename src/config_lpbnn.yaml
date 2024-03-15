@@ -50,7 +50,9 @@ transition:
   bnn_lr: 1e-2
   window_length: 4
   bnn_layer_count: 1
-
+  grad_norm_determ: 0.05
+  grad_norm_bnn: 1
+  
 value:
   training_iterations: 3
   hidden_dim: 1536
@@ -62,6 +64,7 @@ terminal:
   training_iterations: 3
   hidden_dim: 1536
   learning_rate: 1e-4
+  grad_norm: 1
 
 representation:
   training_iterations: 3

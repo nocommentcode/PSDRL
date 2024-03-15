@@ -8,8 +8,9 @@ import torch.nn as nn
 
 
 class TransitionTrainer:
-    def __init__(self, model: TransitionNetwork) -> None:
+    def __init__(self, model: TransitionNetwork, max_grad_norm: float) -> None:
         self.model = model
+        self.max_grad_norm = max_grad_norm
 
     def reset(self):
         self.log = LossLog("Transition")
@@ -30,7 +31,9 @@ class TransitionTrainer:
     def step(self, window_index):
         self.loss /= window_index + 1
         self.loss.backward()
-        total_norm = nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+        total_norm = nn.utils.clip_grad_norm_(
+            self.model.parameters(), max_norm=self.max_grad_norm
+        )
         self.grad_log += total_norm
 
         self.model.optimizer.step()

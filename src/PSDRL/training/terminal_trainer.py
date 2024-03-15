@@ -5,11 +5,14 @@ import torch.nn as nn
 
 
 class TerminalTrainer:
-    def __init__(self, model: TerminalModel) -> None:
+    def __init__(self, model: TerminalModel, max_grad_norm: float) -> None:
         self.model = model
+        self.max_grad_norm = max_grad_norm
 
     def reset(self):
         self.log = LossLog("Terminal")
+        self.grad_log = LossLog("Terminal Grad Norm")
+
         self.loss = 0
 
     def accumulate_loss(self, next_state, target):
@@ -22,7 +25,10 @@ class TerminalTrainer:
     def step(self, window_index):
         self.loss /= window_index + 1
         self.loss.backward()
-        nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+        total_norm = nn.utils.clip_grad_norm_(
+            self.model.parameters(), max_norm=self.max_grad_norm
+        )
+        self.grad_log += total_norm
 
         self.model.optimizer.step()
 
@@ -30,6 +36,7 @@ class TerminalTrainer:
 
     def log_losses(self, logger):
         logger.log_losses(self.log)
+        logger.log_losses(self.grad_log)
 
     def zero_grads(self):
         self.model.optimizer.zero_grad()

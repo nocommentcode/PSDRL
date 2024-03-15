@@ -9,14 +9,24 @@ import torch.nn as nn
 
 
 class LPBNNTransitionTrainer(TransitionTrainer):
-    def __init__(self, model: LPBNNTransitionModel, elbow_weight):
+    def __init__(
+        self,
+        model: LPBNNTransitionModel,
+        elbow_weight: float,
+        determ_max_grad_norm: float,
+        bnn_max_grad_norm: float,
+    ):
         self.model = model
         self.elbow_weight = elbow_weight
+        self.determ_max_grad_norm = determ_max_grad_norm
+        self.bnn_max_grad_norm = bnn_max_grad_norm
 
     def reset(self):
         self.determ_log = LossLog("Transition Deterministic")
         self.bnn_log = LossLog("Transition BNN")
         self.elbow_log = LossLog("Transition Elbow")
+        self.determ_grad_log = LossLog("Terminal Determ Grad Norm")
+        self.bnn_grad_log = LossLog("Terminal BNN Grad Norm")
 
         self.determ_loss = 0
         self.bnn_loss = 0
@@ -26,6 +36,8 @@ class LPBNNTransitionTrainer(TransitionTrainer):
         logger.log_losses(self.determ_log)
         logger.log_losses(self.bnn_log)
         logger.log_losses(self.elbow_log)
+        logger.log_losses(self.determ_grad_log)
+        logger.log_losses(self.bnn_grad_log)
 
     def accumulate_loss(self, x: torch.Tensor, hidden: torch.tensor, target: bool):
         bnn_output, determ_output, h = self.model.forward(x, hidden)
@@ -55,11 +67,12 @@ class LPBNNTransitionTrainer(TransitionTrainer):
         if self.model.determ_optimizer is not None:
             self.determ_loss /= window_index + 1
             self.determ_loss.backward()
-            nn.utils.clip_grad_norm_(
+            total_norm = nn.utils.clip_grad_norm_(
                 list(self.model.pre_split_layers.parameters())
                 + list(self.model.post_split_layers.parameters()),
-                max_norm=1.0,
+                max_norm=self.determ_max_grad_norm,
             )
+            self.determ_grad_log += total_norm
 
             self.model.determ_optimizer.step()
 
@@ -67,7 +80,10 @@ class LPBNNTransitionTrainer(TransitionTrainer):
             total_bnn_loss = self.bnn_loss + self.elbow_weight * self.elbow_loss
             total_bnn_loss /= window_index + 1
             total_bnn_loss.backward()
-            nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            total_norm = nn.utils.clip_grad_norm_(
+                self.model.parameters(), max_norm=self.bnn_max_grad_norm
+            )
+            self.bnn_grad_log += total_norm
 
             self.model.bnn_optimizer.step()
 
