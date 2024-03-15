@@ -154,9 +154,10 @@ class PSDRL(nn.Module):
         self.model.reset_hidden_state()
         s = embed_obs(initial_state)
         for _ in range(num_steps):
-            s_, r, t, _ = self.model.predict(s, self.model.prev_state)
+            s_, r, t, h = self.model.predict(s, self.model.prev_state)
             a = self._select_action(s)
 
+            self.model.set_hidden_state(h[a])
             s = s_[a].unsqueeze(0)
             r = r[a]
             t = t[a]

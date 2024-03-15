@@ -61,6 +61,7 @@ def run_experiment(
         current_observation, _ = env.reset()
         done = False
         while not done:
+            stored_hidden_state = agent.model.prev_state
             if test and experiment_step % test_freq == 0:
                 test_reward = run_test_episode(test_env, agent, time_limit)
                 print(
@@ -83,6 +84,7 @@ def run_experiment(
                 trajectories = agent.check_prediction_diversity(test_env, n_diversity)
                 frames = generate_diversity_video_frames(trajectories)
                 logger.log_diversity(frames, experiment_step)
+            agent.model.set_hidden_state(stored_hidden_state)
 
             action = agent.select_action(current_observation, episode_step)
             observation, reward, done, _, _ = env.step(action)
