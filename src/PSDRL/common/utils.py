@@ -1,5 +1,6 @@
 import os
 import pickle
+import random
 from typing import TYPE_CHECKING
 
 import gym
@@ -71,6 +72,13 @@ def state_action_append(
     return torch.hstack(
         (obs, F.one_hot(action.reshape(-1).long(), num_classes=n_actions).to(device))
     )
+
+
+def set_seeds(seed: int):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 def create_state_action_batch(
