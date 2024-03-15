@@ -1,5 +1,6 @@
 from typing import Union, TYPE_CHECKING
 from ..common.utils import generate_rollout_img
+from .loss_log import LossLog
 
 if TYPE_CHECKING:
     from .data_manager import DataManager
@@ -26,12 +27,20 @@ class Logger:
         )
         self.data_manager.update(self.log, timestep)
 
+    def send_log(self, timestep: int):
+        self.data_manager.update(self.log, timestep)
+
     def log_rollout(self, rollouts, timestep: int):
         images = [
             generate_rollout_img(states, rewards, dones)
             for states, rewards, dones in rollouts
         ]
         self.data_manager.log_images("Rollouts", images, timestep)
+
+    def log_losses(self, *losses: LossLog):
+        for loss in losses:
+            names, values = loss.get_scalar()
+            self.add_scalars(names, values)
 
     def log_diversity(self, trajectories, timestep: int):
         self.data_manager.log_videos("Diversity", trajectories, timestep)

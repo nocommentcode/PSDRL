@@ -9,8 +9,8 @@ from ..networks.value import Network as ValueNetwork
 from ..training.policy import PolicyTrainer
 from ..common.settings import TP_THRESHOLD
 from ..agent.agent_model import AgentModel
-from ..agent.neural_linear_agent_model import NeuralLinearAgentModel
-from ..agent.lp_bnn_agent_model import LPBNNAgentModel
+from ..bayes.neural_linear_agent_model import NeuralLinearAgentModel
+from ..lpbnn.lp_bnn_agent_model import LPBNNAgentModel
 import torch.nn as nn
 
 
@@ -83,7 +83,6 @@ class PSDRL(nn.Module):
         obs = preprocess_image(obs)
         obs = torch.from_numpy(obs).float().to(self.device)
         obs = self.model.embed_observation(obs)
-
         return self._select_action(obs)
 
     def _select_action(self, obs: torch.tensor):
@@ -135,6 +134,7 @@ class PSDRL(nn.Module):
         if ep and timestep % update_freq == 0:
             self.model.train_(self.dataset)
             self.policy_trainer.train_(self.model, self.dataset)
+            self.dataset.logger.send_log(timestep)
 
     def play_through_episode(
         self,

@@ -1,3 +1,4 @@
+from ..logging.loss_log import LossLog
 from ..common.replay import Dataset
 from ..networks.representation import AutoEncoder
 
@@ -8,6 +9,8 @@ class RepresentationTrainer:
         self.training_iterations = training_iterations
 
     def train_(self, dataset: Dataset):
+        loss_log = LossLog("AE")
+
         for _ in range(self.training_iterations):
             o, _, _, _, _ = dataset.sample_sequences()
             self.ae.loss = 0
@@ -18,5 +21,6 @@ class RepresentationTrainer:
                 self.ae.loss = self.ae.loss_function(sequence, decode_s)
                 self.ae.loss.backward()
                 self.ae.optimizer.step()
+                loss_log += self.ae.loss
 
-        dataset.logger.add_scalars("Loss/AE", self.ae.loss.item())
+        dataset.logger.log_losses(loss_log)

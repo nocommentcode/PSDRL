@@ -1,7 +1,10 @@
 import torch
 
+from ..logging.loss_log import LossLog
+
 from ..common.replay import Dataset
 from ..common.utils import state_action_append
+import torch.nn as nn
 
 
 class TransitionModelTrainer:
@@ -34,6 +37,9 @@ class TransitionModelTrainer:
         the specified number of training iterations. Gradients are accumulated for the specified window length, after
         which they are back-propagated.
         """
+        terminal_loss_log = LossLog("Terminal")
+        transition_loss_log = LossLog("Transition")
+
         for _ in range(self.training_iterations):
             o, a, o1, r, t = dataset.sample_sequences()
             length = len(o[0])
@@ -68,19 +74,17 @@ class TransitionModelTrainer:
                     for net in self.networks:
                         net.loss /= window_idx + 1
                         net.loss.backward()
+                        nn.utils.clip_grad_norm_(net.parameters(), max_norm=1.0)
                         net.optimizer.step()
                     self.prev_states = self.prev_states.detach()
 
-                    dataset.logger.add_scalars(
-                        ["Loss/Transition", "Loss/Terminal"],
-                        [
-                            self.transition_network.loss.item(),
-                            self.terminal_network.loss.item(),
-                        ],
-                    )
+                    terminal_loss_log += self.terminal_network.loss
+                    transition_loss_log += self.transition_network.loss
 
                     self.transition_network.loss = 0
                     self.terminal_network.loss = 0
                     window_idx = 0
                 else:
                     window_idx += 1
+        dataset.logger.log_losses(terminal_loss_log)
+        dataset.logger.log_losses(transition_loss_log)
