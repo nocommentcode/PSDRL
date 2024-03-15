@@ -63,6 +63,7 @@ def run_experiment(
         while not done:
             stored_hidden_state = agent.model.prev_state
             if test and experiment_step % test_freq == 0:
+                agent.eval()
                 test_reward = run_test_episode(test_env, agent, time_limit)
                 print(
                     f"Episode {ep}, Timestep {experiment_step}, Test Reward {test_reward}"
@@ -73,6 +74,7 @@ def run_experiment(
                     test_reward=test_reward,
                     epsilon=agent.epsilon,
                 )
+                agent.train()
 
             if gen_rollouts and experiment_step % rollout_freq == 0:
                 rollouts = [

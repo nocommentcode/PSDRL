@@ -124,11 +124,10 @@ class LPBNNTransitionModel(nn.Module):
 
     def merge_ensemble_preds(self, predictions: torch.tensor):
         predictions = predictions.view((self.ensemble_size, -1, *predictions.shape[1:]))
+        if self.training:
+            index = self.random_state.randint(0, self.ensemble_size)
+            return predictions[index]
         return predictions.mean(0)
-
-        # if self.training:
-        #     index = self.random_state.randint(0, self.ensemble_size)
-        #     return output[index]
 
     def predict(self, x: torch.tensor, hidden: torch.tensor):
         with torch.no_grad():
