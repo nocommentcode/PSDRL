@@ -1,8 +1,10 @@
+import numpy as np
 from ..agent.agent_model import AgentModel
 from .lp_bnn_transition import LPBNNTransitionModel
 from ..lpbnn.lp_bnn_transition_trainer import LPBNNTransitionTrainer
 from numpy.random import RandomState
 import torch
+from ..common.replay import Dataset
 
 
 class LPBNNAgentModel(AgentModel):
@@ -30,3 +32,10 @@ class LPBNNAgentModel(AgentModel):
             config["transition"]["grad_norm_bnn"],
         )
         self.transition_trainer.transition_trainer = transition_trainer
+
+    def train_(self, dataset: Dataset):
+        self.representation_trainer.train_(dataset)
+        self.transition_trainer.train_(dataset)
+        std = np.array(self.transition_network.diversity_stds)
+        self.transition_network.reset_diversity_stds()
+        dataset.logger.add_scalars("Data/Ensemble STD", std.mean())

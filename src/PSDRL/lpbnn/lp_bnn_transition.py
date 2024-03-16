@@ -40,8 +40,12 @@ class LPBNNTransitionModel(nn.Module):
         self.bnn_layer_loss = 0
         self.bnn_elbow_loss = 0
 
+        self.reset_diversity_stds()
         self.init_weights(config)
         self.to(device)
+
+    def reset_diversity_stds(self):
+        self.diversity_stds = []
 
     def build_layers(self, bnn_layer_count):
         def get_layer_config(layer_index):
@@ -125,6 +129,7 @@ class LPBNNTransitionModel(nn.Module):
     def merge_ensemble_preds(self, predictions: torch.tensor):
         predictions = predictions.view((self.ensemble_size, -1, *predictions.shape[1:]))
         if self.training:
+            self.diversity_stds.append(predictions.std(0).sum().item())
             index = self.random_state.randint(0, self.ensemble_size)
             return predictions[index]
         return predictions.mean(0)

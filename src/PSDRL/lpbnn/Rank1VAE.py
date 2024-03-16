@@ -36,9 +36,9 @@ class Rank1VAE(nn.Module):
         return self.decoder(z)
 
     def reparameterize(self, mean: torch.Tensor, log_var: torch.Tensor) -> torch.Tensor:
-        # std = torch.exp(0.5 * log_var)
+        std = torch.exp(0.5 * log_var)
         epsilon = torch.randn_like(log_var).to(log_var.device)
-        z = log_var * epsilon + mean
+        z = std * epsilon + mean
         return z
 
     def train(self, mode: bool = True):
