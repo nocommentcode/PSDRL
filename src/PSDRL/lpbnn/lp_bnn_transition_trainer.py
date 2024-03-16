@@ -90,8 +90,11 @@ class LPBNNTransitionTrainer(TransitionTrainer):
         self.zero_loss()
 
     def zero_grads(self):
-        self.model.bnn_optimizer.zero_grad()
-        self.model.determ_optimizer.zero_grad()
+        if self.model.determ_optimizer is not None:
+            self.model.determ_optimizer.zero_grad()
+
+        if self.model.bnn_optimizer is not None:
+            self.model.bnn_optimizer.zero_grad()
 
     def zero_loss(self):
         self.determ_loss = 0
