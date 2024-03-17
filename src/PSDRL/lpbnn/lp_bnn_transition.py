@@ -128,20 +128,23 @@ class LPBNNTransitionModel(nn.Module):
 
     def merge_ensemble_preds(self, predictions: torch.tensor):
         predictions = predictions.view((self.ensemble_size, -1, *predictions.shape[1:]))
+
         if self.training:
             self.diversity_stds.append(predictions.std(0).sum().item())
             index = self.random_state.randint(0, self.ensemble_size)
             return predictions[index]
+
         return predictions.mean(0)
 
     def predict(self, x: torch.tensor, hidden: torch.tensor):
         with torch.no_grad():
-            h = self._cell(x, hidden)
-            partial_output = self.pre_split_layers(torch.cat((h, x), dim=1))
-            partial_output = partial_output.repeat(
-                [self.ensemble_size, *(1 for _ in partial_output.shape[1:])]
-            )
-            ensemble_output = self.bnn_layers(partial_output)
-            merged_output = self.merge_ensemble_preds(ensemble_output)
+            return self.forward(x, hidden)
+            # h = self._cell(x, hidden)
+            # partial_output = self.pre_split_layers(torch.cat((h, x), dim=1))
+            # partial_output = partial_output.repeat(
+            #     [self.ensemble_size, *(1 for _ in partial_output.shape[1:])]
+            # )
+            # ensemble_output = self.bnn_layers(partial_output)
+            # merged_output = self.merge_ensemble_preds(ensemble_output)
 
-            return merged_output, h
+            # return merged_output, h
