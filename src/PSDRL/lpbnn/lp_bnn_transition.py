@@ -138,7 +138,8 @@ class LPBNNTransitionModel(nn.Module):
 
     def predict(self, x: torch.tensor, hidden: torch.tensor):
         with torch.no_grad():
-            return self.forward(x, hidden)
+            bnn_output, determ_output, h = self.forward(x, hidden)
+            return bnn_output, h
             # h = self._cell(x, hidden)
             # partial_output = self.pre_split_layers(torch.cat((h, x), dim=1))
             # partial_output = partial_output.repeat(
