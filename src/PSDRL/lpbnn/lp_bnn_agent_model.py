@@ -82,8 +82,14 @@ class LPBNNAgentModel(AgentModel):
         )
 
         self.diversity_std = []
+        self.init_weights(config)
 
         self.to(device)
+
+    def init_weights(self, config):
+        for module in self.bnn_layers.modules():
+            if isinstance(module, LPBNNLinear):
+                module.init_weights(config["init_strategy"])
 
     def build_bnn_(self, config):
         vae_embedding_size = config["vae_embedding_size"]
