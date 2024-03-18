@@ -154,9 +154,8 @@ class LPBNNAgentModel(AgentModel):
 
         def sample_ensemble(output, record_diversity=False):
             output = output.view((self.ensemble_size, -1, *output.shape[1:]))
-
             if record_diversity:
-                self.diversity_std.append(features.std(0).sum().item())
+                self.diversity_std.append(output.std(0).sum().item())
 
             return output[index]
 
