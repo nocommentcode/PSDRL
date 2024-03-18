@@ -109,10 +109,12 @@ class LPBNNAgentModel(AgentModel):
                         vae_embedding_size,
                     )
                 )
+
+                # only count linear layers
+                curr_layer_count += 1
+
             if type(module) == nn.Tanh:
                 bnn_layers.append(nn.Tanh())
-
-            curr_layer_count += 1
 
         return nn.Sequential(*reversed(bnn_layers))
 
