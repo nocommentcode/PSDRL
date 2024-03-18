@@ -119,9 +119,6 @@ class LPBNNTransitionModel(nn.Module):
 
         determ_output = self.post_split_layers(split_point_output)
         bnn_input = split_point_output.detach()
-        # .repeat(
-        #     [self.ensemble_size, *(1 for _ in split_point_output.shape[1:])]
-        # )
         bnn_output = self.bnn_layers(bnn_input)
 
         return bnn_output, determ_output, h
@@ -138,14 +135,12 @@ class LPBNNTransitionModel(nn.Module):
 
     def predict(self, x: torch.tensor, hidden: torch.tensor):
         with torch.no_grad():
-            bnn_output, determ_output, h = self.forward(x, hidden)
-            return determ_output, h
-            # h = self._cell(x, hidden)
-            # partial_output = self.pre_split_layers(torch.cat((h, x), dim=1))
-            # partial_output = partial_output.repeat(
-            #     [self.ensemble_size, *(1 for _ in partial_output.shape[1:])]
-            # )
-            # ensemble_output = self.bnn_layers(partial_output)
-            # merged_output = self.merge_ensemble_preds(ensemble_output)
+            h = self._cell(x, hidden)
+            partial_output = self.pre_split_layers(torch.cat((h, x), dim=1))
+            partial_output = partial_output.repeat(
+                [self.ensemble_size, *(1 for _ in partial_output.shape[1:])]
+            )
+            ensemble_output = self.bnn_layers(partial_output)
+            merged_output = self.merge_ensemble_preds(ensemble_output)
 
-            # return merged_output, h
+            return merged_output, h
