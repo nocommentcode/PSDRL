@@ -22,8 +22,8 @@ class Logger:
         self, timestep: int, train_reward: int, test_reward: int, epsilon: float
     ):
         self.add_scalars(
-            ["Reward/Train_Reward", "Reward/Test_Reward", "Data/Epsilon"],
-            [train_reward, test_reward, epsilon],
+            ["Reward/Train_Reward", "Reward/Test_Reward", "Data/Epsilon", "Data/Step"],
+            [train_reward, test_reward, epsilon, timestep],
         )
         self.data_manager.update(self.log, timestep)
 
