@@ -74,11 +74,13 @@ def state_action_append(
     )
 
 
-def set_seeds(seed: int):
+def set_seeds(seed: int, *envs: gym.Env):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     random.seed(seed)
     np.random.seed(seed)
+    for env in envs:
+        env.seed(seed)
 
 
 def create_state_action_batch(

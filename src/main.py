@@ -132,7 +132,7 @@ def main(config: dict):
         exp_config["suite"], exp_config["env"], exp_config["test"]
     )
 
-    set_seeds(exp_config["seed"])
+    set_seeds(exp_config["seed"], env, test_env)
 
     agent = PSDRL(config, actions, logger, config["experiment"]["seed"])
     print(str(agent))
