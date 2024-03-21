@@ -3,6 +3,7 @@ from ..lpbnn.LPBNNLinear import LPBNNLinear
 from torch import nn
 from ..common.settings import REC_CELL, TM_OPTIM
 from numpy.random import RandomState
+from ..networks.transition import Network as TransitionModel
 
 
 class LPBNNTransitionModel(nn.Module):
@@ -12,10 +13,12 @@ class LPBNNTransitionModel(nn.Module):
         embed_dim: int,
         config: dict,
         device: str,
+        transition_model: TransitionModel,
     ) -> None:
         super().__init__()
         self.device = device
         self.n_actions = n_actions
+        self.transition_model = transition_model
 
         self.ensemble_size = config["ensemble_size"]
         vae_embedding_size = config["vae_embedding_size"]
@@ -39,9 +42,9 @@ class LPBNNTransitionModel(nn.Module):
                 latent_dim, embed_dim + 1, self.ensemble_size, vae_embedding_size
             ),
         )
-        self._cell = REC_CELL(embed_dim + n_actions, gru_dim)
+        # self._cell = REC_CELL(embed_dim + n_actions, gru_dim)
 
-        self.optimizer = TM_OPTIM(self.parameters(), lr=config["learning_rate"])
+        self.optimizer = TM_OPTIM(self.layers.parameters(), lr=config["learning_rate"])
         self.init_weights(config["init_strategy"])
         self.to(device)
 
@@ -51,7 +54,8 @@ class LPBNNTransitionModel(nn.Module):
                 module.init_weights(strategy)
 
     def forward(self, x: torch.tensor, hidden: torch.tensor):
-        h = self._cell(x, hidden)
+        with torch.no_grad():
+            h = self.transition_model._cell(x, hidden)
         return self.layers(torch.cat((h, x), dim=1)), h
 
     def predict(self, x: torch.tensor, hidden: torch.tensor):

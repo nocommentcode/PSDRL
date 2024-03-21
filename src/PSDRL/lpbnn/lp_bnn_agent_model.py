@@ -4,9 +4,6 @@ from .lp_bnn_transition import LPBNNTransitionModel
 from numpy.random import RandomState
 import torch
 from ..common.replay import Dataset
-import torch.nn as nn
-from ..lpbnn.LPBNNLinear import LPBNNLinear
-from ..common.settings import TM_OPTIM
 from typing import Tuple
 from ..common.utils import create_state_action_batch
 from ..training.transition_model_trainer import TransitionModelTrainer
@@ -27,33 +24,27 @@ class LPBNNAgentModel(AgentModel):
         self.ensemble_size = config["transition"]["ensemble_size"]
         self.random_state = random_state
 
-        self.terminal_network = TerminalNetwork(
-            config["representation"]["embed_dim"], config["terminal"], self.device
-        )
-        terminal_trainer = TerminalTrainer(
-            self.terminal_network, config["terminal"]["grad_norm"]
-        )
-
-        self.transition_network = LPBNNTransitionModel(
+        self.bnn_transition_network = LPBNNTransitionModel(
             len(actions),
             config["representation"]["embed_dim"],
             config["transition"],
             self.device,
+            self.transition_network,
         )
 
         transition_trainer = LPBNNTransitionTrainer(
-            self.transition_network,
+            self.bnn_transition_network,
             config["transition"]["elbow_weight"],
             config["transition"]["grad_norm"],
         )
 
-        self.transition_trainer = TransitionModelTrainer(
+        self.bnn_transition_trainer = TransitionModelTrainer(
             config["transition"],
             self.autoencoder,
             len(actions),
             self.device,
             transition_trainer,
-            terminal_trainer,
+            None,
         )
 
         self.diversity_std = []
@@ -61,6 +52,7 @@ class LPBNNAgentModel(AgentModel):
 
     def train_(self, dataset: Dataset):
         super().train_(dataset)
+        self.bnn_transition_trainer.train_(dataset)
 
         std = np.array(self.diversity_std)
         dataset.logger.add_scalars("Data/Ensemble STD", std.mean())
@@ -98,7 +90,7 @@ class LPBNNAgentModel(AgentModel):
     ) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
         state_actions, h = self.build_predict_batch(states, h)
 
-        features, h = self.transition_network.predict(state_actions, h)
+        features, h = self.bnn_transition_network.predict(state_actions, h)
         features, h = self.sample_ensemble_pred(features, h)
 
         states = features[:, :-1]
