@@ -20,7 +20,7 @@ algorithm:
   update_freq: 1e3
   warmup_length: 1e5
   warmup_freq: 250
-  policy_noise_start: 1.0
+  policy_noise_start: 0.001
   policy_noise_end: 0.001
 
 experiment:
@@ -47,10 +47,7 @@ transition:
   hidden_dim: 1536
   gru_dim: 756
   learning_rate: 1e-4
-  bnn_lr: 1e-2
   window_length: 4
-  bnn_layer_count: 0
-  grad_norm_bnn: 10
   grad_norm: 0.05
   
 value:

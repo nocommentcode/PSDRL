@@ -18,6 +18,6 @@ class LossLog:
 
     def get_scalar(self):
         return (
-            [f"Loss/{self.name}-Total", f"Loss/{self.name}-Average"],
-            [self.total, self.total / self.n if self.n != 0 else 0],
+            [f"Loss/{self.name}-Average"],
+            [self.total / self.n if self.n != 0 else 0],
         )

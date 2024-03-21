@@ -34,8 +34,7 @@ class TransitionModelTrainer:
         which they are back-propagated.
         """
         self.transition_trainer.reset()
-        if self.terminal_trainer is not None:
-            self.terminal_trainer.reset()
+        self.terminal_trainer.reset()
 
         for _ in range(self.training_iterations):
             o, a, o1, r, t = dataset.sample_sequences()
@@ -45,14 +44,12 @@ class TransitionModelTrainer:
                 dataset.batch_size, self.gru_dim, device=self.device
             )
             self.transition_trainer.zero_loss()
-            if self.terminal_trainer is not None:
-                self.terminal_trainer.zero_loss()
+            self.terminal_trainer.zero_loss()
 
             window_idx = 0
             for idx in range(length):
                 self.transition_trainer.zero_grads()
-                if self.terminal_trainer is not None:
-                    self.terminal_trainer.zero_grads()
+                self.terminal_trainer.zero_grads()
 
                 state = self.autoencoder.embed(o[:, idx])
                 next_state = self.autoencoder.embed(o1[:, idx])
@@ -64,18 +61,15 @@ class TransitionModelTrainer:
                 self.prev_states = self.transition_trainer.accumulate_loss(
                     state_action, self.prev_states, transition_target
                 )
-                if self.terminal_trainer is not None:
-                    self.terminal_trainer.accumulate_loss(next_state, t[:, idx])
+                self.terminal_trainer.accumulate_loss(next_state, t[:, idx])
 
                 if window_idx == self.window_length or idx == length - 1:
                     self.transition_trainer.step(window_idx)
-                    if self.terminal_trainer is not None:
-                        self.terminal_trainer.step(window_idx)
+                    self.terminal_trainer.step(window_idx)
                     self.prev_states = self.prev_states.detach()
                     window_idx = 0
                 else:
                     window_idx += 1
 
         self.transition_trainer.log_losses(dataset.logger)
-        if self.terminal_trainer is not None:
-            self.terminal_trainer.log_losses(dataset.logger)
+        self.terminal_trainer.log_losses(dataset.logger)

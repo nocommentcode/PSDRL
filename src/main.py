@@ -90,6 +90,7 @@ def run_experiment(
 
             action = agent.select_action(current_observation, episode_step)
             observation, reward, done, _, _ = env.step(action)
+
             done = done or episode_step == time_limit
             agent.update(
                 current_observation,
@@ -135,7 +136,6 @@ def main(config: dict):
     set_seeds(exp_config["seed"], env, test_env)
 
     agent = PSDRL(config, actions, logger, config["experiment"]["seed"])
-    print(str(agent))
     if config["load"]:
         load(agent, config["load_dir"])
 
