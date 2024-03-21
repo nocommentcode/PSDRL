@@ -69,7 +69,8 @@ class TransitionModelTrainer:
 
                 if window_idx == self.window_length or idx == length - 1:
                     self.transition_trainer.step(window_idx)
-                    self.terminal_trainer.step(window_idx)
+                    if self.terminal_trainer is not None:
+                        self.terminal_trainer.step(window_idx)
                     self.prev_states = self.prev_states.detach()
                     window_idx = 0
                 else:
