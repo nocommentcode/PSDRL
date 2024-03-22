@@ -95,14 +95,10 @@ class LPBNNAgentModel(AgentModel):
     def predict(
         self, states: torch.tensor, h: torch.tensor
     ) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
-        print("input", states.shape, h.shape)
         state_actions, h = self.build_predict_batch(states, h)
-        print("batch", state_actions.shape, h.shape)
 
         features, h = self.transition_network.predict(state_actions, h)
-        print("prediction", features.shape, h.shape)
         features, h = self.sample_ensemble_pred(features, h)
-        print("sampled", features.shape, h.shape)
 
         states = features[:, :-1]
         rewards = features[:, -1]
