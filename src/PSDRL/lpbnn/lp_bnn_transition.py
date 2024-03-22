@@ -38,13 +38,14 @@ class LPBNNTransitionModel(nn.Module):
             LPBNNLinear(latent_dim, latent_dim, self.ensemble_size, vae_embedding_size),
             nn.Tanh(),
             LPBNNLinear(latent_dim, latent_dim, self.ensemble_size, vae_embedding_size),
+            nn.Tanh(),
             LPBNNLinear(
                 latent_dim, embed_dim + 1, self.ensemble_size, vae_embedding_size
             ),
         )
-        # self._cell = REC_CELL(embed_dim + n_actions, gru_dim)
+        self._cell = REC_CELL(embed_dim + n_actions, gru_dim)
 
-        self.optimizer = TM_OPTIM(self.layers.parameters(), lr=config["learning_rate"])
+        self.optimizer = TM_OPTIM(self.parameters(), lr=config["learning_rate"])
         self.init_weights(config["init_strategy"])
         self.to(device)
 
@@ -54,8 +55,7 @@ class LPBNNTransitionModel(nn.Module):
                 module.init_weights(strategy)
 
     def forward(self, x: torch.tensor, hidden: torch.tensor):
-        with torch.no_grad():
-            h = self.transition_model._cell(x, hidden)
+        h = self._cell(x, hidden)
         return self.layers(torch.cat((h, x), dim=1)), h
 
     def predict(self, x: torch.tensor, hidden: torch.tensor):

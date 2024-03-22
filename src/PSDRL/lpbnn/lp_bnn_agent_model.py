@@ -24,7 +24,14 @@ class LPBNNAgentModel(AgentModel):
         self.ensemble_size = config["transition"]["ensemble_size"]
         self.random_state = random_state
 
-        self.bnn_transition_network = LPBNNTransitionModel(
+        self.terminal_network = TerminalNetwork(
+            config["representation"]["embed_dim"], config["terminal"], self.device
+        )
+        terminal_trainer = TerminalTrainer(
+            self.terminal_network, config["terminal"]["grad_norm"]
+        )
+
+        self.transition_network = LPBNNTransitionModel(
             len(actions),
             config["representation"]["embed_dim"],
             config["transition"],
@@ -33,26 +40,26 @@ class LPBNNAgentModel(AgentModel):
         )
 
         transition_trainer = LPBNNTransitionTrainer(
-            self.bnn_transition_network,
+            self.transition_network,
             config["transition"]["elbow_weight"],
             config["transition"]["grad_norm"],
         )
 
-        self.bnn_transition_trainer = TransitionModelTrainer(
+        self.transition_trainer = TransitionModelTrainer(
             config["transition"],
             self.autoencoder,
             len(actions),
             self.device,
             transition_trainer,
-            None,
+            terminal_trainer,
         )
 
         self.diversity_std = []
         self.to(device)
 
     def train_(self, dataset: Dataset):
-        super().train_(dataset)
-        self.bnn_transition_trainer.train_(dataset)
+        self.representation_trainer.train_(dataset)
+        self.transition_trainer.train_(dataset)
 
         std = np.array(self.diversity_std)
         dataset.logger.add_scalars("Data/Ensemble STD", std.mean())
@@ -88,10 +95,14 @@ class LPBNNAgentModel(AgentModel):
     def predict(
         self, states: torch.tensor, h: torch.tensor
     ) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
+        print("input", states.shape, h.shape)
         state_actions, h = self.build_predict_batch(states, h)
+        print("batch", state_actions.shape, h.shape)
 
-        features, h = self.bnn_transition_network.predict(state_actions, h)
+        features, h = self.transition_network.predict(state_actions, h)
+        print("prediction", features.shape, h.shape)
         features, h = self.sample_ensemble_pred(features, h)
+        print("sampled", features.shape, h.shape)
 
         states = features[:, :-1]
         rewards = features[:, -1]

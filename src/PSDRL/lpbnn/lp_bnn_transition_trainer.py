@@ -33,7 +33,9 @@ class LPBNNTransitionTrainer(TransitionTrainer):
         logger.log_losses(self.elbow_log)
         logger.log_losses(self.grad_log)
 
-    def accumulate_loss(self, x: torch.Tensor, hidden: torch.tensor, target: bool):
+    def accumulate_loss(
+        self, x: torch.Tensor, hidden: torch.tensor, target: torch.tensor
+    ):
         prediction, h = self.model.forward(x, hidden)
 
         bnn_loss = TM_LOSS_F(prediction, target)
@@ -54,7 +56,7 @@ class LPBNNTransitionTrainer(TransitionTrainer):
             total_bnn_loss /= window_index + 1
             total_bnn_loss.backward()
             total_norm = nn.utils.clip_grad_norm_(
-                self.model.layers.parameters(), max_norm=self.max_grad_norm
+                self.model.parameters(), max_norm=self.max_grad_norm
             )
             self.grad_log += total_norm
 
